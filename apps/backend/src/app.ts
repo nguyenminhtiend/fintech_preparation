@@ -5,7 +5,7 @@ import helmet from 'helmet';
 import { createAccountModule } from './modules/account/account.module';
 import { getServerConfig } from './shared/config';
 import { createDatabase } from './shared/database';
-import { errorMiddleware, requestIdMiddleware } from './shared/middleware';
+import { errorMiddleware } from './shared/middleware';
 import { healthRoute, notFoundRoute } from './shared/routes';
 import { logger } from './shared/utils';
 
@@ -19,8 +19,6 @@ export function createApp(): Express {
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-
-  app.use(requestIdMiddleware);
 
   healthRoute(app);
 

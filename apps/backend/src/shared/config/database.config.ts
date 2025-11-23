@@ -9,7 +9,7 @@ export interface DatabaseConfig {
 
 export function getDatabaseConfig(): DatabaseConfig {
   return {
-    url: process.env.DATABASE_URL || '',
+    url: process.env.DATABASE_URL ?? '',
     pool: {
       min: 2,
       max: 10,
