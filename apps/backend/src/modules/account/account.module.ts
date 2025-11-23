@@ -6,7 +6,6 @@ import { createAccountRouter } from './routes/account.route';
 import { AccountService } from './services/account.service';
 
 export function createAccountModule(db: Database) {
-  // Build dependency chain (bottom-up)
   const accountRepository = new AccountRepository(db);
   const accountService = new AccountService(accountRepository);
   const accountController = new AccountController(accountService);
@@ -14,6 +13,6 @@ export function createAccountModule(db: Database) {
 
   return {
     accountRouter,
-    accountService, // Export for other modules if needed
+    accountService,
   };
 }

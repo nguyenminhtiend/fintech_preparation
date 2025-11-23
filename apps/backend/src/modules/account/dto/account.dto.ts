@@ -1,29 +1,26 @@
 import { z } from 'zod';
 
-// Create Account
 export const createAccountSchema = z.object({
-  customer_id: z.string().uuid('Invalid customer ID format'),
+  customerId: z.string().uuid('Invalid customer ID format'),
   currency: z.string().length(3, 'Currency must be 3 characters (e.g., USD, EUR)').toUpperCase(),
 });
 export type CreateAccountDto = z.infer<typeof createAccountSchema>;
 
-// Account Response
 export interface AccountResponse {
   id: string;
-  customer_id: string;
-  account_number: string;
+  customerId: string | null;
+  accountNumber: string;
   balance: number;
-  available_balance: number;
+  availableBalance: number;
   currency: string;
   version: number;
-  created_at: Date;
-  updated_at: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-// Balance Response
 export interface BalanceResponse {
   balance: number;
-  available_balance: number;
+  availableBalance: number;
   currency: string;
   version: number;
 }
