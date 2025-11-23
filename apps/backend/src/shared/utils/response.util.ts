@@ -1,4 +1,3 @@
-// apps/backend/src/shared/utils/response.util.ts
 import { type Response } from 'express';
 
 export interface ApiResponse<T = unknown> {

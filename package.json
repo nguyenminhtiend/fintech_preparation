@@ -2,6 +2,7 @@
   "name": "fintech-monolith",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "Production-grade modular monolith fintech backend",
   "engines": {
     "node": ">=22.0.0",
@@ -27,6 +28,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "prettier": "^3.4.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.47.0"
   }
 }

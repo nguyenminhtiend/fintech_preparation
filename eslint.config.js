@@ -1,26 +1,21 @@
 import eslint from '@eslint/js';
-import tseslint from '@typescript-eslint/eslint-plugin';
-import tsParser from '@typescript-eslint/parser';
-
+import tseslint from 'typescript-eslint';
 import globals from 'globals';
 
-export default [
+export default tseslint.config(
   eslint.configs.recommended,
+  ...tseslint.configs.recommended,
   {
-    files: ['**/*.ts'],
     languageOptions: {
-      parser: tsParser,
-      parserOptions: {
-        ecmaVersion: 'latest',
-        sourceType: 'module'
-      },
       globals: {
         ...globals.node
-      }
-    },
-    plugins: {
-      '@typescript-eslint': tseslint
-    },
+      },
+      ecmaVersion: 'latest',
+      sourceType: 'module'
+    }
+  },
+  {
+    files: ['**/*.ts'],
     rules: {
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
@@ -31,5 +26,8 @@ export default [
       quotes: ['error', 'single', { avoidEscape: true }],
       'no-undef': 'error'
     }
+  },
+  {
+    ignores: ['dist', 'node_modules', 'coverage', '.turbo']
   }
-];
+);

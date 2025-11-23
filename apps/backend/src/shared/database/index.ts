@@ -1,6 +1,19 @@
-// apps/backend/src/shared/database/index.ts
 import { PrismaClient } from '@prisma/client';
 import { logger } from '../utils/logger.util.js';
+
+interface QueryEvent {
+  query: string;
+  params: string;
+  duration: number;
+}
+
+interface ErrorEvent {
+  message: string;
+}
+
+interface WarnEvent {
+  message: string;
+}
 
 export type Database = PrismaClient;
 
@@ -19,21 +32,17 @@ export function createDatabase(): PrismaClient {
     ]
   });
 
-  // Log queries in development
   if (process.env.NODE_ENV === 'development') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (prisma as any).$on('query', (e: any) => {
+    prisma.$on('query', (e: QueryEvent) => {
       logger.debug({ query: e.query, params: e.params, duration: e.duration }, 'Query');
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (prisma as any).$on('error', (e: any) => {
+  prisma.$on('error', (e: ErrorEvent) => {
     logger.error({ message: e.message }, 'Database error');
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (prisma as any).$on('warn', (e: any) => {
+  prisma.$on('warn', (e: WarnEvent) => {
     logger.warn({ message: e.message }, 'Database warning');
   });
 

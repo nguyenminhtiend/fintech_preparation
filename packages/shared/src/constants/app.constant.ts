@@ -1,4 +1,3 @@
-// packages/shared/src/constants/app.constant.ts
 export const APP_NAME = 'Fintech Monolith' as const;
 export const API_VERSION = 'v1' as const;
 export const DEFAULT_PAGE_SIZE = 20 as const;

@@ -1,8 +1,7 @@
-// apps/backend/src/shared/config/environment.config.ts
 import { config } from 'dotenv';
 import { z } from 'zod';
+import { logger } from '../utils/logger.util.js';
 
-// Load environment variables from .env file
 config();
 
 const envSchema = z.object({
@@ -23,8 +22,7 @@ function loadEnvironment(): Environment {
   const parsed = envSchema.safeParse(process.env);
 
   if (!parsed.success) {
-    // eslint-disable-next-line no-console
-    console.error('❌ Invalid environment variables:', parsed.error.format());
+    logger.error({ errors: parsed.error.format() }, '❌ Invalid environment variables');
     throw new Error('Invalid environment variables');
   }
 

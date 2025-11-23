@@ -1,4 +1,3 @@
-// apps/backend/src/shared/middleware/request-id.middleware.ts
 import { type Request, type Response, type NextFunction } from 'express';
 import { randomUUID } from 'crypto';
 

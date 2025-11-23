@@ -1,4 +1,3 @@
-// apps/backend/src/shared/middleware/error.middleware.ts
 import { type Request, type Response, type NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { logger } from '../utils/logger.util.js';
@@ -8,25 +7,21 @@ export function errorMiddleware(
   error: Error,
   req: Request,
   res: Response,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  next: NextFunction
+  _next: NextFunction
 ): void {
-  // Zod validation errors
   if (error instanceof ZodError) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    logger.warn({ errors: (error as any).errors, path: req.path }, 'Validation error');
+    logger.warn({ errors: error.issues, path: req.path }, 'Validation error');
     res.status(400).json({
       success: false,
       error: {
         message: 'Validation failed',
         code: 'VALIDATION_ERROR',
-        details: (error as any).errors
+        details: error.issues
       }
     });
     return;
   }
 
-  // Custom app errors
   if (error instanceof AppError) {
     logger.warn(
       {
@@ -46,7 +41,6 @@ export function errorMiddleware(
     return;
   }
 
-  // Unknown errors
   logger.error(
     {
       message: error.message,

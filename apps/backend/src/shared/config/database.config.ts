@@ -1,4 +1,3 @@
-// apps/backend/src/shared/config/database.config.ts
 export interface DatabaseConfig {
   url: string;
   pool: {

@@ -1,4 +1,3 @@
-// packages/shared/src/types/common.type.ts
 export interface PaginationParams {
   page: number;
   limit: number;

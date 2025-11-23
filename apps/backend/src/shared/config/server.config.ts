@@ -1,4 +1,3 @@
-// apps/backend/src/shared/config/server.config.ts
 import { env } from './environment.config.js';
 
 export interface ServerConfig {
