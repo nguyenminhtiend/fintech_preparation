@@ -1,0 +1,16 @@
+// ==========================================
+// 5. AUDIT LOGS
+// ==========================================
+
+model AuditLog {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String?  @map("user_id") @db.Uuid // No FK (keeps log even if user deleted)
+  resourceType String?  @map("resource_type") @db.VarChar(50)
+  resourceId   String?  @map("resource_id") @db.Uuid
+  action       String?  @db.VarChar(50)
+  changes      Json?    @db.JsonB
+  ipAddress    String?  @map("ip_address") @db.Inet
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("audit_logs")
+}

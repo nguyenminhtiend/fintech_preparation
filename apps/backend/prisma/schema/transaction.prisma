@@ -1,0 +1,54 @@
+// ==========================================
+// 3. TRANSACTION ENGINE
+// ==========================================
+
+model Transaction {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  // PREVENT DUPLICATE PROCESSING
+  idempotencyKey  String? @unique @map("idempotency_key") @db.VarChar(255)
+  referenceNumber String  @unique @map("reference_number") @db.VarChar(100)
+
+  type   String @db.VarChar(30) // TRANSFER, DEPOSIT, WITHDRAWAL
+  status String @default("PENDING") @db.VarChar(20)
+
+  amount   BigInt
+  currency String @db.Char(3)
+
+  fromAccountId String? @map("from_account_id") @db.Uuid
+  toAccountId   String? @map("to_account_id") @db.Uuid
+
+  description String? @db.Text
+  metadata    Json    @default("{}") @db.JsonB
+
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  completedAt DateTime? @map("completed_at") @db.Timestamptz
+
+  fromAccount             Account?                 @relation("FromAccount", fields: [fromAccountId], references: [id])
+  toAccount               Account?                 @relation("ToAccount", fields: [toAccountId], references: [id])
+  ledgerEntries           LedgerEntry[]
+  transactionReservations TransactionReservation[]
+
+  @@index([referenceNumber])
+  @@index([idempotencyKey])
+  @@map("transactions")
+}
+
+// Holds funds while a transaction is processing (2-Phase Commit)
+model TransactionReservation {
+  id            String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  transactionId String @map("transaction_id") @db.Uuid
+  accountId     String @map("account_id") @db.Uuid
+
+  amount    BigInt // Amount locked
+  expiresAt DateTime @map("expires_at") @db.Timestamptz // Auto-release time
+
+  status    String   @default("ACTIVE") @db.VarChar(20) // ACTIVE, RELEASED, CLAIMED
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  transaction Transaction @relation(fields: [transactionId], references: [id])
+  account     Account     @relation(fields: [accountId], references: [id])
+
+  @@index([accountId, status])
+  @@map("transaction_reservations")
+}

@@ -1,0 +1,24 @@
+// ==========================================
+// 4. PAYMENT METHODS
+// ==========================================
+
+model PaymentMethod {
+  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId String? @map("customer_id") @db.Uuid
+
+  type          String  @default("CARD") @db.VarChar(20)
+  provider      String? @db.VarChar(50)
+  providerToken String  @map("provider_token") @db.VarChar(255)
+
+  displayName String? @map("display_name") @db.VarChar(50)
+  last4Digits String? @map("last_4_digits") @db.VarChar(4)
+  expiryMonth Int?    @map("expiry_month")
+  expiryYear  Int?    @map("expiry_year")
+
+  isDefault Boolean  @default(false) @map("is_default")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  customer Customer? @relation(fields: [customerId], references: [id])
+
+  @@map("payment_methods")
+}

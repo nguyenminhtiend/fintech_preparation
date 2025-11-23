@@ -1,4 +1,4 @@
-import { type Request, type Response, type NextFunction } from 'express';
+import { type NextFunction,type Request, type Response } from 'express';
 
 export function notFoundRoute(req: Request, res: Response, _next: NextFunction): void {
   res.status(404).json({

@@ -1,5 +1,6 @@
 import { config } from 'dotenv';
 import { z } from 'zod';
+
 import { logger } from '../utils/logger.util.js';
 
 config();

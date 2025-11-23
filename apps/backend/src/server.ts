@@ -1,6 +1,6 @@
 import { createApp } from './app.js';
+import { env, getServerConfig } from './shared/config';
 import { createDatabase, disconnectDatabase } from './shared/database';
-import { getServerConfig, env } from './shared/config';
 import { logger } from './shared/utils';
 
 async function startServer(): Promise<void> {
@@ -19,16 +19,16 @@ async function startServer(): Promise<void> {
       logger.info(`📊 Health check available at http://localhost:${config.port}/health`);
     });
 
-    const shutdown = async (): Promise<void> => {
+    const shutdown = (): void => {
       logger.info('Shutting down gracefully...');
 
-      server.close(async () => {
+      server.close(() => {
         logger.info('HTTP server closed');
 
-        await disconnectDatabase();
-        logger.info('Database connection closed');
-
-        process.exit(0);
+        void disconnectDatabase().then(() => {
+          logger.info('Database connection closed');
+          process.exit(0);
+        });
       });
 
       setTimeout(() => {
@@ -45,4 +45,4 @@ async function startServer(): Promise<void> {
   }
 }
 
-startServer();
+void startServer();

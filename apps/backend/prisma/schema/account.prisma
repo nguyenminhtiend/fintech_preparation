@@ -1,0 +1,31 @@
+// ==========================================
+// 2. CORE BANKING (Accounts)
+// ==========================================
+
+model Account {
+  id            String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId    String? @map("customer_id") @db.Uuid
+  accountNumber String  @unique @map("account_number") @db.VarChar(50)
+  currency      String  @default("USD") @db.Char(3)
+
+  // FINANCIAL STATE
+  balance          BigInt @default(0) // Settled Balance
+  availableBalance BigInt @default(0) @map("available_balance") // Balance - Holds
+
+  // CONCURRENCY CONTROL (Critical for Fintech)
+  // Increments on every update to prevent race conditions
+  version Int @default(1)
+
+  status    String   @default("ACTIVE") @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  customer                Customer?                @relation(fields: [customerId], references: [id])
+  transactionsFrom        Transaction[]            @relation("FromAccount")
+  transactionsTo          Transaction[]            @relation("ToAccount")
+  ledgerEntries           LedgerEntry[]
+  transactionReservations TransactionReservation[]
+
+  @@index([customerId])
+  @@map("accounts")
+}
