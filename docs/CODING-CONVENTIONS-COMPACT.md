@@ -55,7 +55,7 @@ Use Zod for all input validation. Define schema + infer type:
 ```typescript
 const schema = z.object({
   email: z.string().email(),
-  password: z.string().min(8).regex(/[A-Z]/).regex(/[0-9]/)
+  password: z.string().min(8).regex(/[A-Z]/).regex(/[0-9]/),
 });
 type Dto = z.infer<typeof schema>;
 ```

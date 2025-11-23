@@ -1,11 +1,11 @@
 import { type Account } from '@prisma/client';
-import { ConflictError, NotFoundError } from '@shared/utils/error-handler.util';
+import { NotFoundError } from '@shared/utils/error-handler.util';
 import { logger } from '@shared/utils/logger.util';
 
 import {
   type AccountResponse,
   type BalanceResponse,
-  type CreateAccountDto
+  type CreateAccountDto,
 } from '../dto/account.dto';
 import { type AccountRepository } from '../repositories/account.repository';
 
@@ -28,12 +28,12 @@ export class AccountService {
     const account = await this.accountRepository.create({
       customer_id: data.customer_id,
       account_number: accountNumber,
-      currency: data.currency
+      currency: data.currency,
     });
 
     logger.info('Account created successfully', {
       account_id: account.id,
-      account_number: accountNumber
+      account_number: accountNumber,
     });
 
     return this.mapToAccountResponse(account);
@@ -51,7 +51,7 @@ export class AccountService {
       balance: Number(account.balance),
       available_balance: Number(account.availableBalance),
       currency: account.currency,
-      version: account.version
+      version: account.version,
     };
   }
 
@@ -73,7 +73,7 @@ export class AccountService {
       currency: account.currency,
       version: account.version,
       created_at: account.createdAt,
-      updated_at: account.updatedAt
+      updated_at: account.updatedAt,
     };
   }
 }

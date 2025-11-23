@@ -1,4 +1,4 @@
-import { type NextFunction,type Request, type Response } from 'express';
+import { type NextFunction, type Request, type Response } from 'express';
 import { ZodError } from 'zod';
 
 import { AppError } from '../utils/error-handler.util.js';
@@ -8,7 +8,7 @@ export function errorMiddleware(
   error: Error,
   req: Request,
   res: Response,
-  _next: NextFunction
+  _next: NextFunction,
 ): void {
   if (error instanceof ZodError) {
     logger.warn({ errors: error.issues, path: req.path }, 'Validation error');
@@ -17,8 +17,8 @@ export function errorMiddleware(
       error: {
         message: 'Validation failed',
         code: 'VALIDATION_ERROR',
-        details: error.issues
-      }
+        details: error.issues,
+      },
     });
     return;
   }
@@ -28,16 +28,16 @@ export function errorMiddleware(
       {
         message: error.message,
         code: error.code,
-        path: req.path
+        path: req.path,
       },
-      'Application error'
+      'Application error',
     );
     res.status(error.statusCode).json({
       success: false,
       error: {
         message: error.message,
-        code: error.code
-      }
+        code: error.code,
+      },
     });
     return;
   }
@@ -46,15 +46,15 @@ export function errorMiddleware(
     {
       message: error.message,
       stack: error.stack,
-      path: req.path
+      path: req.path,
     },
-    'Unexpected error'
+    'Unexpected error',
   );
   res.status(500).json({
     success: false,
     error: {
       message: 'Internal server error',
-      code: 'INTERNAL_ERROR'
-    }
+      code: 'INTERNAL_ERROR',
+    },
   });
 }

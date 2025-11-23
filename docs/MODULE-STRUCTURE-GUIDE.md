@@ -45,7 +45,7 @@ import { z } from 'zod';
 // Login
 export const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8)
+  password: z.string().min(8),
 });
 export type LoginDto = z.infer<typeof loginSchema>;
 
@@ -57,7 +57,7 @@ export const registerSchema = z.object({
     .min(8)
     .regex(/[A-Z]/, 'Password must contain uppercase')
     .regex(/[0-9]/, 'Password must contain number'),
-  name: z.string().min(2).max(100)
+  name: z.string().min(2).max(100),
 });
 export type RegisterDto = z.infer<typeof registerSchema>;
 
@@ -160,8 +160,8 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name
-      }
+        name: user.name,
+      },
     };
   }
 
@@ -177,7 +177,7 @@ export class AuthService {
     const user = await this.userRepository.create({
       email: data.email,
       name: data.name,
-      hashedPassword
+      hashedPassword,
     });
 
     const token = this.generateAccessToken(user.id);
@@ -191,8 +191,8 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name
-      }
+        name: user.name,
+      },
     };
   }
 
@@ -252,14 +252,14 @@ export class UserRepository {
 
   async findByEmail(email: string): Promise<User | null> {
     const result = await this.db.query.users.findFirst({
-      where: eq(users.email, email)
+      where: eq(users.email, email),
     });
     return result || null;
   }
 
   async findById(id: string): Promise<User | null> {
     const result = await this.db.query.users.findFirst({
-      where: eq(users.id, id)
+      where: eq(users.id, id),
     });
     return result || null;
   }
@@ -328,7 +328,7 @@ export function createAuthModule(db: Database) {
 
   return {
     authRouter,
-    authService // Export for other modules if needed
+    authService, // Export for other modules if needed
   };
 }
 ```
@@ -347,7 +347,7 @@ export class AppError extends Error {
   constructor(
     public message: string,
     public statusCode: number,
-    public code?: string
+    public code?: string,
   ) {
     super(message);
     this.name = this.constructor.name;
@@ -380,7 +380,7 @@ export function errorHandler(error: Error, req: Request, res: Response, next: Ne
     res.status(400).json({
       error: 'Validation failed',
       code: 'VALIDATION_ERROR',
-      details: error.errors
+      details: error.errors,
     });
     return;
   }
@@ -390,11 +390,11 @@ export function errorHandler(error: Error, req: Request, res: Response, next: Ne
     logger.warn('Application error', {
       message: error.message,
       code: error.code,
-      path: req.path
+      path: req.path,
     });
     res.status(error.statusCode).json({
       error: error.message,
-      code: error.code
+      code: error.code,
     });
     return;
   }
@@ -403,11 +403,11 @@ export function errorHandler(error: Error, req: Request, res: Response, next: Ne
   logger.error('Unexpected error', {
     message: error.message,
     stack: error.stack,
-    path: req.path
+    path: req.path,
   });
   res.status(500).json({
     error: 'Internal server error',
-    code: 'INTERNAL_ERROR'
+    code: 'INTERNAL_ERROR',
   });
 }
 ```
@@ -464,7 +464,7 @@ describe('AuthController', () => {
   beforeEach(() => {
     mockAuthService = {
       authenticate: vi.fn(),
-      register: vi.fn()
+      register: vi.fn(),
     } as unknown as AuthService;
 
     controller = new AuthController(mockAuthService);
@@ -472,7 +472,7 @@ describe('AuthController', () => {
     mockRequest = { body: {} };
     mockResponse = {
       json: vi.fn().mockReturnThis(),
-      status: vi.fn().mockReturnThis()
+      status: vi.fn().mockReturnThis(),
     };
   });
 
@@ -482,7 +482,7 @@ describe('AuthController', () => {
       const authResult = {
         token: 'jwt-token',
         refreshToken: 'refresh-token',
-        user: { id: '1', email: loginData.email, name: 'Test' }
+        user: { id: '1', email: loginData.email, name: 'Test' },
       };
 
       mockRequest.body = loginData;
@@ -509,8 +509,8 @@ import { UnauthorizedError } from '@shared/errors';
 vi.mock('bcrypt', () => ({
   default: {
     compare: vi.fn(),
-    hash: vi.fn()
-  }
+    hash: vi.fn(),
+  },
 }));
 
 describe('AuthService', () => {
@@ -521,7 +521,7 @@ describe('AuthService', () => {
     mockUserRepository = {
       findByEmail: vi.fn(),
       create: vi.fn(),
-      saveRefreshToken: vi.fn()
+      saveRefreshToken: vi.fn(),
     } as unknown as UserRepository;
 
     service = new AuthService(mockUserRepository);
@@ -532,7 +532,7 @@ describe('AuthService', () => {
       vi.mocked(mockUserRepository.findByEmail).mockResolvedValue(null);
 
       await expect(
-        service.authenticate({ email: 'test@example.com', password: 'pass' })
+        service.authenticate({ email: 'test@example.com', password: 'pass' }),
       ).rejects.toThrow(UnauthorizedError);
     });
   });
@@ -555,10 +555,10 @@ describe('UserRepository', () => {
     mockDb = {
       query: {
         users: {
-          findFirst: vi.fn()
-        }
+          findFirst: vi.fn(),
+        },
       },
-      insert: vi.fn(() => ({ values: vi.fn(() => ({ returning: vi.fn() })) }))
+      insert: vi.fn(() => ({ values: vi.fn(() => ({ returning: vi.fn() })) })),
     } as unknown as Database;
 
     repository = new UserRepository(mockDb);

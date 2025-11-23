@@ -15,7 +15,7 @@ export function getServerConfig(): ServerConfig {
     env: env.NODE_ENV,
     cors: {
       origin: env.NODE_ENV === 'development' ? '*' : [],
-      credentials: true
-    }
+      credentials: true,
+    },
   };
 }

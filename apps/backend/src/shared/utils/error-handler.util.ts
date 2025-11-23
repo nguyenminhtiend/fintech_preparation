@@ -2,7 +2,7 @@ export class AppError extends Error {
   constructor(
     public message: string,
     public statusCode: number,
-    public code?: string
+    public code?: string,
   ) {
     super(message);
     this.name = this.constructor.name;

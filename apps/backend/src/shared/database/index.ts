@@ -16,7 +16,7 @@ interface WarnEvent {
 const logConfig: { level: 'query' | 'error' | 'warn'; emit: 'event' }[] = [
   { level: 'query', emit: 'event' },
   { level: 'error', emit: 'event' },
-  { level: 'warn', emit: 'event' }
+  { level: 'warn', emit: 'event' },
 ];
 
 export type Database = PrismaClient<{ log: typeof logConfig }>;
@@ -37,7 +37,7 @@ export function createDatabase(): PrismaClient<{ log: typeof logConfig }> {
 
   prisma = new PrismaClient({
     adapter,
-    log: logConfig
+    log: logConfig,
   });
 
   if (process.env.NODE_ENV === 'development') {

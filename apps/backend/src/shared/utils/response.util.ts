@@ -13,7 +13,7 @@ export interface ApiResponse<T = unknown> {
 export function sendSuccess<T>(res: Response, data: T, statusCode = 200): Response {
   return res.status(statusCode).json({
     success: true,
-    data
+    data,
   } as ApiResponse<T>);
 }
 
@@ -22,14 +22,14 @@ export function sendError(
   message: string,
   statusCode = 500,
   code?: string,
-  details?: unknown
+  details?: unknown,
 ): Response {
   return res.status(statusCode).json({
     success: false,
     error: {
       message,
       code,
-      details
-    }
+      details,
+    },
   } as ApiResponse);
 }

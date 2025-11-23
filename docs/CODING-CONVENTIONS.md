@@ -219,7 +219,7 @@ async function getUser(id: string): Promise<User> {
 
 // ❌ Incorrect - mixing promises and async/await
 async function getUser(id: string) {
-  return userRepository.findById(id).then(user => {
+  return userRepository.findById(id).then((user) => {
     if (!user) throw new Error('Not found');
     return user;
   });
@@ -282,7 +282,7 @@ export const createUserSchema = z.object({
     .regex(/[0-9]/, 'Password must contain number'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  age: z.number().int().min(18, 'Must be 18 or older').optional()
+  age: z.number().int().min(18, 'Must be 18 or older').optional(),
 });
 
 // Type inference
@@ -301,7 +301,7 @@ export const validateRequest = (schema: ZodSchema) => {
       if (error instanceof ZodError) {
         return res.status(400).json({
           error: 'Validation failed',
-          details: error.errors
+          details: error.errors,
         });
       }
       next(error);
@@ -457,10 +457,10 @@ const users = await prisma.user.findMany({
   select: {
     id: true,
     email: true,
-    name: true
+    name: true,
   },
   where: { isActive: true },
-  take: 10
+  take: 10,
 });
 
 // ❌ Incorrect - fetching everything
@@ -514,14 +514,14 @@ logger.info('operation.start', {
   userId,
   amount,
   currency,
-  timestamp: Date.now()
+  timestamp: Date.now(),
 });
 
 logger.info('operation.complete', {
   operation: 'createPayment',
   userId,
   paymentId: result.id,
-  duration: Date.now() - startTime
+  duration: Date.now() - startTime,
 });
 ```
 

@@ -12,8 +12,8 @@ export function getDatabaseConfig(): DatabaseConfig {
     url: process.env.DATABASE_URL || '',
     pool: {
       min: 2,
-      max: 10
+      max: 10,
     },
-    log: process.env.NODE_ENV === 'development'
+    log: process.env.NODE_ENV === 'development',
   };
 }

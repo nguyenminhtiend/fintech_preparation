@@ -18,20 +18,20 @@ export class AccountRepository {
         currency: data.currency,
         balance: BigInt(0),
         availableBalance: BigInt(0),
-        version: 1
-      }
+        version: 1,
+      },
     });
   }
 
   async findById(id: string): Promise<Account | null> {
     return await this.db.account.findUnique({
-      where: { id }
+      where: { id },
     });
   }
 
   async findByAccountNumber(accountNumber: string): Promise<Account | null> {
     return await this.db.account.findUnique({
-      where: { accountNumber }
+      where: { accountNumber },
     });
   }
 }
