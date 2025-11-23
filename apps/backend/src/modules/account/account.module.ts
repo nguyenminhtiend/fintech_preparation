@@ -1,9 +1,9 @@
 import { type Database } from '@shared/database';
 
-import { AccountController } from './controllers/account.controller';
-import { AccountRepository } from './repositories/account.repository';
-import { createAccountRouter } from './routes/account.route';
-import { AccountService } from './services/account.service';
+import { AccountController } from './controllers';
+import { AccountRepository } from './repositories';
+import { createAccountRouter } from './routes';
+import { AccountService } from './services';
 
 export function createAccountModule(db: Database) {
   const accountRepository = new AccountRepository(db);

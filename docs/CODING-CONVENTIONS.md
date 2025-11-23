@@ -292,7 +292,7 @@ export type CreateUserDto = z.infer<typeof createUserSchema>;
 ### Validation Middleware
 
 ```typescript
-export const validateRequest = (schema: ZodSchema) => {
+export const validateRequest = (schema: z.ZodTypeAny) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       req.body = await schema.parseAsync(req.body);
@@ -319,7 +319,7 @@ export const validateRequest = (schema: ZodSchema) => {
   "printWidth": 100,
   "tabWidth": 2,
   "useTabs": false,
-  "trailingComma": "es5",
+  "trailingComma": "all",
   "arrowParens": "always",
   "bracketSpacing": true,
   "endOfLine": "lf"
