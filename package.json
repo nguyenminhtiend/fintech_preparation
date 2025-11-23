@@ -20,8 +20,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,json,md}\"",
     "typecheck": "pnpm -r typecheck",
-    "check": "pnpm format && pnpm lint && pnpm typecheck",
-    "quality": "pnpm format:check && pnpm lint && pnpm typecheck"
+    "check": "pnpm format && pnpm lint && pnpm typecheck"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
