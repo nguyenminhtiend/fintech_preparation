@@ -1,10 +1,10 @@
-import express, { type Express, type Request, type Response } from 'express';
+import express, { type Express } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
-import { errorMiddleware } from './shared/middleware/error.middleware.js';
-import { requestIdMiddleware } from './shared/middleware/request-id.middleware.js';
-import { getServerConfig } from './shared/config/server.config.js';
-import { logger } from './shared/utils/logger.util.js';
+import { errorMiddleware, requestIdMiddleware } from './shared/middleware/index.js';
+import { getServerConfig } from './shared/config/index.js';
+import { logger } from './shared/utils/index.js';
+import { healthRoute, notFoundRoute } from './shared/routes/index.js';
 
 export function createApp(): Express {
   const app = express();
@@ -18,23 +18,9 @@ export function createApp(): Express {
 
   app.use(requestIdMiddleware);
 
-  app.get('/health', (req: Request, res: Response) => {
-    res.json({
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime()
-    });
-  });
+  healthRoute(app);
 
-  app.use((req: Request, res: Response) => {
-    res.status(404).json({
-      success: false,
-      error: {
-        message: `Route ${req.method} ${req.path} not found`,
-        code: 'NOT_FOUND'
-      }
-    });
-  });
+  app.use(notFoundRoute);
 
   app.use(errorMiddleware);
 
