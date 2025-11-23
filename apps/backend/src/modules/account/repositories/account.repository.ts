@@ -8,7 +8,13 @@ export interface CreateAccountData {
   currency: string;
 }
 
-export class AccountRepository {
+export interface IAccountRepository {
+  create(data: CreateAccountData): Promise<AccountEntity>;
+  findById(id: string): Promise<AccountEntity | null>;
+  findByAccountNumber(accountNumber: string): Promise<AccountEntity | null>;
+}
+
+export class AccountRepository implements IAccountRepository {
   constructor(private readonly db: Database) {}
 
   async create(data: CreateAccountData): Promise<AccountEntity> {

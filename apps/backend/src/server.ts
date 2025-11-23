@@ -1,3 +1,6 @@
+// eslint-disable-next-line simple-import-sort/imports
+import 'dotenv/config';
+
 import { env, getServerConfig } from './shared/config';
 import { createDatabase, disconnectDatabase } from './shared/database';
 import { logger } from './shared/utils';

@@ -1,64 +1,45 @@
 import { NotFoundError } from '@shared/utils/error-handler.util';
 
-import {
-  type AccountResponse,
-  type BalanceResponse,
-  type CreateAccountDto,
-} from '../dto/account.dto';
 import { type AccountEntity } from '../interfaces/account.entity';
-import { type AccountRepository } from '../repositories/account.repository';
+import { type IAccountRepository } from '../repositories/account.repository';
+
+export interface CreateAccountInput {
+  customerId: string;
+  currency: string;
+}
 
 export class AccountService {
-  constructor(private readonly accountRepository: AccountRepository) {}
+  constructor(private readonly accountRepository: IAccountRepository) {}
 
-  async createAccount(data: CreateAccountDto): Promise<AccountResponse> {
+  async createAccount(input: CreateAccountInput): Promise<AccountEntity> {
     const accountNumber = this.generateAccountNumber();
 
     const existing = await this.accountRepository.findByAccountNumber(accountNumber);
     if (existing) {
-      return this.createAccount(data);
+      return this.createAccount(input);
     }
 
     const account = await this.accountRepository.create({
-      customerId: data.customerId,
+      customerId: input.customerId,
       accountNumber: accountNumber,
-      currency: data.currency,
+      currency: input.currency,
     });
 
-    return this.mapToAccountResponse(account);
+    return account;
   }
 
-  async getAccountBalance(accountId: string): Promise<BalanceResponse> {
+  async getAccountBalance(accountId: string): Promise<AccountEntity> {
     const account = await this.accountRepository.findById(accountId);
     if (!account) {
       throw new NotFoundError('Account not found');
     }
 
-    return {
-      balance: Number(account.balance),
-      availableBalance: Number(account.availableBalance),
-      currency: account.currency,
-      version: account.version,
-    };
+    return account;
   }
 
   private generateAccountNumber(): string {
     const min = 1000000000;
     const max = 9999999999;
     return Math.floor(Math.random() * (max - min + 1) + min).toString();
-  }
-
-  private mapToAccountResponse(account: AccountEntity): AccountResponse {
-    return {
-      id: account.id,
-      customerId: account.customerId,
-      accountNumber: account.accountNumber,
-      balance: Number(account.balance),
-      availableBalance: Number(account.availableBalance),
-      currency: account.currency,
-      version: account.version,
-      createdAt: account.createdAt,
-      updatedAt: account.updatedAt,
-    };
   }
 }
