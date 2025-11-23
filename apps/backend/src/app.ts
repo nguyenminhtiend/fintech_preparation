@@ -1,10 +1,10 @@
 import express, { type Express } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
-import { errorMiddleware, requestIdMiddleware } from './shared/middleware/index.js';
-import { getServerConfig } from './shared/config/index.js';
-import { logger } from './shared/utils/index.js';
-import { healthRoute, notFoundRoute } from './shared/routes/index.js';
+import { errorMiddleware, requestIdMiddleware } from './shared/middleware';
+import { getServerConfig } from './shared/config';
+import { logger } from './shared/utils';
+import { healthRoute, notFoundRoute } from './shared/routes';
 
 export function createApp(): Express {
   const app = express();

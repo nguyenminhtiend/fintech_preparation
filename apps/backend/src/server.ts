@@ -1,7 +1,7 @@
 import { createApp } from './app.js';
-import { createDatabase, disconnectDatabase } from './shared/database/index.js';
-import { getServerConfig, env } from './shared/config/index.js';
-import { logger } from './shared/utils/index.js';
+import { createDatabase, disconnectDatabase } from './shared/database';
+import { getServerConfig, env } from './shared/config';
+import { logger } from './shared/utils';
 
 async function startServer(): Promise<void> {
   try {
