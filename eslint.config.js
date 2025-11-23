@@ -11,30 +11,30 @@ export default tseslint.config(
   {
     languageOptions: {
       globals: {
-        ...globals.node
+        ...globals.node,
       },
       ecmaVersion: 'latest',
       sourceType: 'module',
       parserOptions: {
         projectService: true,
-        tsconfigRootDir: import.meta.dirname
-      }
-    }
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
   },
   {
     plugins: {
-      'simple-import-sort': simpleImportSort
+      'simple-import-sort': simpleImportSort,
     },
     files: ['**/*.ts'],
     rules: {
       // TypeScript-specific overrides
       '@typescript-eslint/no-unused-vars': [
         'error',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
       '@typescript-eslint/consistent-type-imports': [
         'error',
-        { prefer: 'type-imports', fixStyle: 'inline-type-imports' }
+        { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
       ],
       '@typescript-eslint/consistent-type-exports': 'error',
       '@typescript-eslint/switch-exhaustiveness-check': 'error',
@@ -49,25 +49,32 @@ export default tseslint.config(
         'error',
         {
           groups: [
+            // Node.js built-ins
             ['^node:'],
-            ['^@?\\w'],
-            ['^@/'],
+            // External packages (exclude @shared which is internal)
+            ['^@?\\w(?!shared)'],
+            // Internal packages (@shared, @modules, etc.)
+            ['^@(shared|modules|config|utils|core)'],
+            // Parent imports
             ['^\\.\\.(?!/?$)', '^\\.\\./?$'],
+            // Sibling/local imports
             ['^\\./(?=.*/)(?!/?$)', '^\\.(?!/?$)', '^\\./?$'],
+            // Style imports
             ['^.+\\.s?css$'],
-            ['^\\u0000']
-          ]
-        }
+            // Side effect imports
+            ['^\\u0000'],
+          ],
+        },
       ],
-      'simple-import-sort/exports': 'error'
-    }
+      'simple-import-sort/exports': 'error',
+    },
   },
   {
     files: ['**/*.js', '**/*.mjs'],
-    ...tseslint.configs.disableTypeChecked
+    ...tseslint.configs.disableTypeChecked,
   },
   {
-    ignores: ['dist', 'node_modules', 'coverage', '.turbo', '**/*.d.ts']
+    ignores: ['dist', 'node_modules', 'coverage', '.turbo', '**/*.d.ts'],
   },
-  eslintConfigPrettier
+  eslintConfigPrettier,
 );

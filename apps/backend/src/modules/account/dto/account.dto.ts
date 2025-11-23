@@ -1,10 +1,7 @@
-import { z } from 'zod';
-
-export const createAccountSchema = z.object({
-  customerId: z.string().uuid('Invalid customer ID format'),
-  currency: z.string().length(3, 'Currency must be 3 characters (e.g., USD, EUR)').toUpperCase(),
-});
-export type CreateAccountDto = z.infer<typeof createAccountSchema>;
+export interface CreateAccountDto {
+  customerId: string;
+  currency: string;
+}
 
 export interface AccountResponse {
   id: string;

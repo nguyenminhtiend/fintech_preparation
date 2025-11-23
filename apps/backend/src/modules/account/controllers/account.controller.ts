@@ -1,6 +1,10 @@
 import { type Request, type Response } from 'express';
 
-import { type AccountResponse, type BalanceResponse } from '../dto/account.dto';
+import {
+  type AccountResponse,
+  type BalanceResponse,
+  type CreateAccountDto,
+} from '../dto/account.dto';
 import { type AccountEntity } from '../interfaces/account.entity';
 import { type AccountService } from '../services/account.service';
 
@@ -8,8 +12,7 @@ export class AccountController {
   constructor(private readonly accountService: AccountService) {}
 
   createAccount = async (req: Request, res: Response): Promise<void> => {
-    // Validation is now handled by middleware
-    const { customerId, currency } = req.body;
+    const { customerId, currency } = req.body as CreateAccountDto;
     const account = await this.accountService.createAccount({
       customerId,
       currency,

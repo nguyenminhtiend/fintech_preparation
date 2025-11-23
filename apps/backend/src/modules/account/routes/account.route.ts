@@ -1,8 +1,9 @@
-import { validateBody } from '@shared/middleware';
 import { Router } from 'express';
 
+import { validateBody } from '@shared/middleware';
+
 import { type AccountController } from '../controllers';
-import { createAccountSchema } from '../dto/account.dto';
+import { createAccountSchema } from '../schemas/account.schema';
 
 export function createAccountRouter(controller: AccountController): Router {
   const router = Router();

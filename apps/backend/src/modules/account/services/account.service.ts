@@ -1,4 +1,4 @@
-import { NotFoundError } from '@shared/utils/error-handler.util';
+import { NotFoundError } from '@shared/utils';
 
 import { type AccountEntity } from '../interfaces/account.entity';
 import { type IAccountRepository } from '../repositories/account.repository';
