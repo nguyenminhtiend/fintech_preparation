@@ -14,13 +14,12 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    setupFiles: ['./tests/setup/integration.setup.ts'],
-    include: ['tests/integration/**/*.spec.ts'],
-    exclude: ['node_modules', 'dist', 'tests/unit/**', 'tests/api/**', 'tests/e2e/**'],
-    // Integration tests run with limited concurrency to avoid database conflicts
+    setupFiles: ['./tests/setup/database.setup.ts'],
+    include: ['tests/integration/**/*.spec.ts', 'tests/api/**/*.api.spec.ts'],
+    exclude: ['node_modules', 'dist', 'tests/unit/**', 'tests/e2e/**'],
     pool: 'forks',
     maxConcurrency: 1,
-    // Longer timeout for database operations
+    fileParallelism: false,
     testTimeout: 30000,
     hookTimeout: 30000,
     teardownTimeout: 10000,
