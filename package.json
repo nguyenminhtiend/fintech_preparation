@@ -18,6 +18,7 @@
     "db:push": "pnpm --filter backend db:push",
     "test": "pnpm --filter backend test",
     "test:unit": "pnpm --filter backend test:unit",
+    "test:integration": "pnpm --filter backend test:integration",
     "test:watch": "pnpm --filter backend test:watch",
     "test:coverage": "pnpm --filter backend test:coverage",
     "test:ui": "pnpm --filter backend test:ui",

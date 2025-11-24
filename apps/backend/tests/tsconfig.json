@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "..",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@shared/*": ["./src/shared/*"],
+      "@modules/*": ["./src/modules/*"]
+    },
+    "types": ["node", "vitest/globals"],
+    "noEmit": true,
+    "rootDir": ".."
+  },
+  "include": ["./**/*.ts", "../src/**/*.ts"],
+  "exclude": ["node_modules"]
+}

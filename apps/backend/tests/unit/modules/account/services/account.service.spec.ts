@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { mockDeep, mockReset } from 'vitest-mock-extended';
 
 import { type AccountEntity } from '@modules/account/interfaces/account.entity';
-import { type IAccountRepository } from '@modules/account/repositories/account.repository';
-import { AccountService, type CreateAccountInput } from '@modules/account/services/account.service';
+import { type CreateAccountData, type IAccountRepository } from '@modules/account/repositories';
+import { AccountService, type CreateAccountInput } from '@modules/account/services';
 import { NotFoundError } from '@shared/utils';
 
 describe('AccountService - Unit Tests', () => {
@@ -305,17 +305,19 @@ describe('AccountService - Unit Tests', () => {
       const accountNumbers = new Set<string>();
 
       mockAccountRepository.findByAccountNumber.mockResolvedValue(null);
-      mockAccountRepository.create.mockImplementation(async (data) => ({
-        id: '123e4567-e89b-12d3-a456-426614174000',
-        customerId: data.customerId,
-        accountNumber: data.accountNumber,
-        balance: BigInt(0),
-        availableBalance: BigInt(0),
-        currency: data.currency,
-        version: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }));
+      mockAccountRepository.create.mockImplementation((data: CreateAccountData) =>
+        Promise.resolve({
+          id: '123e4567-e89b-12d3-a456-426614174000',
+          customerId: data.customerId,
+          accountNumber: data.accountNumber,
+          balance: BigInt(0),
+          availableBalance: BigInt(0),
+          currency: data.currency,
+          version: 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
+      );
 
       // Act - Create multiple accounts and collect account numbers
       for (let i = 0; i < 10; i++) {
@@ -336,17 +338,19 @@ describe('AccountService - Unit Tests', () => {
       };
 
       mockAccountRepository.findByAccountNumber.mockResolvedValue(null);
-      mockAccountRepository.create.mockImplementation(async (data) => ({
-        id: '123e4567-e89b-12d3-a456-426614174000',
-        customerId: data.customerId,
-        accountNumber: data.accountNumber,
-        balance: BigInt(0),
-        availableBalance: BigInt(0),
-        currency: data.currency,
-        version: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }));
+      mockAccountRepository.create.mockImplementation((data: CreateAccountData) =>
+        Promise.resolve({
+          id: '123e4567-e89b-12d3-a456-426614174000',
+          customerId: data.customerId,
+          accountNumber: data.accountNumber,
+          balance: BigInt(0),
+          availableBalance: BigInt(0),
+          currency: data.currency,
+          version: 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
+      );
 
       // Act & Assert - Test multiple generations
       for (let i = 0; i < 20; i++) {
