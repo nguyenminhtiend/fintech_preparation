@@ -556,7 +556,9 @@ await api
 
 ### Test File Organization
 
-**Recommended: Hybrid Approach**
+**Recommended: Centralized Test Directory**
+
+All test files should be organized under `apps/backend/tests/` directory, mirroring the source structure for clarity and separation of concerns.
 
 ```
 apps/backend/
@@ -564,57 +566,80 @@ apps/backend/
 │   └── modules/
 │       └── account/
 │           ├── controllers/
-│           │   ├── account.controller.ts
-│           │   └── account.controller.spec.ts    # Unit tests co-located
+│           │   └── account.controller.ts
 │           ├── services/
-│           │   ├── account.service.ts
-│           │   └── account.service.spec.ts
-│           ├── repositories/
-│           │   ├── account.repository.ts
-│           │   └── account.repository.spec.ts
-│           └── __tests__/                         # Module integration tests
-│               └── account.integration.spec.ts
+│           │   └── account.service.ts
+│           └── repositories/
+│               └── account.repository.ts
 │
-└── tests/                                          # Global test utilities
-    ├── setup/
+└── tests/                                          # All test files centralized here
+    ├── setup/                                      # Test configuration
     │   ├── global-setup.ts
+    │   ├── vitest.setup.ts
+    │   ├── integration.setup.ts
     │   ├── test-db.ts
     │   └── prisma-mock.ts
-    ├── fixtures/
-    │   └── account-fixtures.ts
+    ├── fixtures/                                   # Test data factories
+    │   ├── account-fixtures.ts
+    │   ├── customer-fixtures.ts
+    │   └── transaction-fixtures.ts
+    ├── unit/                                       # Unit tests (mirror src structure)
+    │   └── modules/
+    │       └── account/
+    │           ├── controllers/
+    │           │   └── account.controller.spec.ts
+    │           ├── services/
+    │           │   └── account.service.spec.ts
+    │           └── repositories/
+    │               └── account.repository.spec.ts
+    ├── integration/                                # Integration tests (component interactions)
+    │   └── modules/
+    │       └── account/
+    │           ├── account-service.integration.spec.ts
+    │           └── account-repository.integration.spec.ts
+    ├── api/                                        # API tests (single endpoint)
+    │   └── modules/
+    │       └── account/
+    │           ├── create-account.api.spec.ts
+    │           ├── get-account.api.spec.ts
+    │           └── update-account.api.spec.ts
     └── e2e/                                        # E2E workflow tests
-        └── customer-onboarding.e2e.spec.ts         # Multi-API workflows
+        ├── customer-onboarding.e2e.spec.ts
+        └── transaction-workflow.e2e.spec.ts
 ```
 
 **Rationale:**
-- Unit tests close to implementation (easy to find and refactor)
-- Integration/API tests grouped by module (clear feature testing)
-- E2E workflow tests in separate directory (cross-module journeys)
-- Global utilities centralized (reusable across modules)
+- **Clear separation**: Test code separate from production code
+- **Easy maintenance**: All tests in one location, easier to manage and configure
+- **Consistent structure**: Mirrors source structure for easy navigation
+- **Test type clarity**: Explicit directories for unit/integration/api/e2e tests
+- **No build pollution**: Tests won't be accidentally included in production builds
+- **Centralized utilities**: Shared fixtures and setup files in one place
 
 **What Goes Where:**
 
 ```typescript
-// ✅ src/modules/account/services/account.service.spec.ts
+// ✅ tests/unit/modules/account/services/account.service.spec.ts
 // Unit test - Service with MOCKED repository
 describe('AccountService - Unit', () => {
   const mockRepo = mockDeep<AccountRepository>();
   const service = new AccountService(mockRepo);
-  // Test business logic only
+  // Test business logic only - all dependencies mocked
 });
 
-// ✅ src/modules/account/__tests__/account.integration.spec.ts
+// ✅ tests/integration/modules/account/account-service.integration.spec.ts
 // Integration test - Service + REAL repository + REAL database
-describe('Account Integration', () => {
+describe('AccountService Integration', () => {
   // Test service interacting with real database
   const service = new AccountService(new AccountRepository(prisma));
+  // Tests component interactions with real dependencies
 });
 
-// ✅ src/modules/account/__tests__/account.api.spec.ts
+// ✅ tests/api/modules/account/create-account.api.spec.ts
 // API test - Single endpoint through full stack
 describe('POST /accounts - API Test', () => {
   await request(app).post('/accounts').send({...}).expect(201);
-  // Tests ONE endpoint with real database
+  // Tests ONE endpoint with real database and full HTTP stack
 });
 
 // ✅ tests/e2e/customer-onboarding.e2e.spec.ts
@@ -637,17 +662,18 @@ describe('Customer Onboarding E2E', () => {
   // Step 4: Verify balance (API D)
   const balance = await request(app).get(`/accounts/${account.body.id}/balance`);
   expect(balance.body.balance).toBe(100);
+  // Tests complete user journey across multiple endpoints
 });
 ```
 
 ### Naming Conventions (2025 Standards)
 
 **File Naming:**
-- **Unit tests**: `*.spec.ts` (co-located with source)
-- **Integration tests**: `*.integration.spec.ts` (component interactions)
-- **API tests**: `*.api.spec.ts` or `*.integration.spec.ts` (single endpoint)
-- **E2E tests**: `*.e2e.spec.ts` (multi-API workflows)
-- **Test utilities**: `*.helper.ts` or `*.fixture.ts`
+- **Unit tests**: `*.spec.ts` (in `tests/unit/` directory)
+- **Integration tests**: `*.integration.spec.ts` (in `tests/integration/` directory)
+- **API tests**: `*.api.spec.ts` (in `tests/api/` directory)
+- **E2E tests**: `*.e2e.spec.ts` (in `tests/e2e/` directory)
+- **Test utilities**: `*.helper.ts` or `*.fixture.ts` (in `tests/fixtures/` or `tests/setup/`)
 
 **Test Suite Naming:**
 
@@ -838,21 +864,24 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     setupFiles: ['./tests/setup/vitest.setup.ts'],
-    include: ['src/**/*.spec.ts'],
+    include: ['tests/unit/**/*.spec.ts'],
     exclude: [
       'node_modules',
       'dist',
-      '**/*.integration.spec.ts',
-      '**/*.e2e.spec.ts'
+      'tests/integration/**',
+      'tests/api/**',
+      'tests/e2e/**'
     ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
+      include: ['src/**/*.ts'],
       exclude: [
         'node_modules/',
         'dist/',
-        '**/*.spec.ts',
-        '**/__tests__/'
+        'tests/**',
+        'src/**/*.d.ts',
+        'src/types/**'
       ]
     },
     mockReset: true,
@@ -874,7 +903,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     setupFiles: ['./tests/setup/integration.setup.ts'],
-    include: ['src/**/*.integration.spec.ts'],
+    include: ['tests/integration/**/*.integration.spec.ts'],
     globalSetup: ['./tests/setup/global-setup.ts'],
     pool: 'forks', // Use separate processes for integration tests
     poolOptions: {
@@ -1510,16 +1539,28 @@ pnpm add -D vitest @vitest/ui @vitest/coverage-v8 vitest-mock-extended supertest
 
 **3. Setup Test Directory Structure**
 
+```bash
+# Create the centralized test directory structure
+mkdir -p tests/{setup,fixtures,unit,integration,api,e2e}
+```
+
 ```
 apps/backend/
-├── tests/
-│   ├── setup/
-│   │   ├── vitest.setup.ts
-│   │   ├── integration.setup.ts
-│   │   ├── global-setup.ts
-│   │   └── prisma-mock.ts
-│   └── fixtures/
-│       └── account-fixtures.ts
+└── tests/
+    ├── setup/
+    │   ├── vitest.setup.ts
+    │   ├── integration.setup.ts
+    │   ├── global-setup.ts
+    │   ├── test-db.ts
+    │   └── prisma-mock.ts
+    ├── fixtures/
+    │   ├── account-fixtures.ts
+    │   ├── customer-fixtures.ts
+    │   └── transaction-fixtures.ts
+    ├── unit/              # Mirror src/ structure here
+    ├── integration/       # Integration tests
+    ├── api/              # API tests
+    └── e2e/              # E2E workflow tests
 ```
 
 **4. Update package.json Scripts**
@@ -1530,6 +1571,9 @@ apps/backend/
     "test": "vitest",
     "test:unit": "vitest run --config vitest.config.ts",
     "test:integration": "vitest run --config vitest.config.integration.ts",
+    "test:api": "vitest run tests/api",
+    "test:e2e": "vitest run tests/e2e",
+    "test:all": "pnpm test:unit && pnpm test:integration && pnpm test:api && pnpm test:e2e",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui"
@@ -1605,20 +1649,21 @@ pnpm add -D husky lint-staged
 # Install all testing dependencies
 pnpm add -D vitest @vitest/ui @vitest/coverage-v8 vitest-mock-extended supertest @types/supertest @faker-js/faker vite-tsconfig-paths
 
-# Run unit tests
-pnpm test:unit
+# Create test directory structure
+cd apps/backend
+mkdir -p tests/{setup,fixtures,unit,integration,api,e2e}
 
-# Run integration tests (requires test DB)
-pnpm test:integration
+# Run different test types
+pnpm test:unit          # Run unit tests only
+pnpm test:integration   # Run integration tests (requires test DB)
+pnpm test:api          # Run API tests (single endpoint tests)
+pnpm test:e2e          # Run E2E tests (workflow tests)
+pnpm test:all          # Run all test types sequentially
 
-# Run all tests with coverage
-pnpm test:coverage
-
-# Run tests in watch mode
-pnpm test:watch
-
-# Run tests with UI
-pnpm test:ui
+# Other test commands
+pnpm test:coverage     # Run all tests with coverage report
+pnpm test:watch        # Run tests in watch mode
+pnpm test:ui           # Run tests with interactive UI
 ```
 
 ---
@@ -1634,10 +1679,10 @@ pnpm test:ui
 - **Assertion**: Vitest built-in (Jest-compatible)
 
 ### Testing Strategy (2025 Modern Approach)
-- **Unit Tests**: Mock all external dependencies, co-locate with source files (40-50%)
-- **Integration Tests**: Real dependencies, test component interactions (20-30%)
-- **API Tests**: Single endpoint through full stack with real database (20-30%)
-- **E2E Tests**: Multi-API workflows, complete user journeys (5-10%)
+- **Unit Tests**: Mock all external dependencies, located in `tests/unit/` (40-50%)
+- **Integration Tests**: Real dependencies, test component interactions in `tests/integration/` (20-30%)
+- **API Tests**: Single endpoint through full stack with real database in `tests/api/` (20-30%)
+- **E2E Tests**: Multi-API workflows, complete user journeys in `tests/e2e/` (5-10%)
 - **Test Isolation**: Table truncation between tests
 - **Parallel Execution**: Unit tests fully parallel, integration tests limited parallelism
 
@@ -1648,12 +1693,13 @@ pnpm test:ui
 - **Subcutaneous Testing**: Testing just below the UI layer (REST API level)
 
 ### Project Structure
-- **Unit tests**: Co-located (`*.spec.ts` next to source)
-- **Integration tests**: Module `__tests__/` directory (`*.integration.spec.ts`)
-- **API tests**: Module `__tests__/` directory (`*.api.spec.ts`)
-- **E2E tests**: Central `tests/e2e/` directory (`*.e2e.spec.ts`)
-- **Test utilities**: Central `tests/` directory
-- **Naming**: Clear distinction between test types
+- **All tests centralized**: Under `apps/backend/tests/` directory
+- **Unit tests**: `tests/unit/` mirroring source structure (`*.spec.ts`)
+- **Integration tests**: `tests/integration/` (`*.integration.spec.ts`)
+- **API tests**: `tests/api/` (`*.api.spec.ts`)
+- **E2E tests**: `tests/e2e/` (`*.e2e.spec.ts`)
+- **Test utilities**: `tests/setup/` and `tests/fixtures/`
+- **Naming**: Clear distinction between test types with explicit directories
 
 ### CI/CD
 - **GitHub Actions**: Separate jobs for unit, integration, and E2E tests

@@ -5,10 +5,11 @@
     "rootDir": "./src",
     "baseUrl": "./src",
     "paths": {
+      "@/*": ["./*"],
       "@shared/*": ["./shared/*"],
       "@modules/*": ["./modules/*"]
     },
-    "types": ["node"],
+    "types": ["node", "vitest/globals"],
     "noEmit": false
   },
   "include": ["src/**/*"],

@@ -12,6 +12,11 @@
     "build": "tsc && tsc-alias",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
+    "test": "vitest",
+    "test:unit": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
     "db:generate": "prisma generate",
     "db:migrate:create": "prisma migrate dev --create-only",
     "db:migrate:deploy": "prisma migrate deploy",
@@ -34,14 +39,22 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.1.0",
     "@types/bcrypt": "^5.0.2",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.10.5",
+    "@types/supertest": "^6.0.3",
+    "@vitest/coverage-v8": "^4.0.13",
+    "@vitest/ui": "^4.0.13",
     "prisma": "^7.0.0",
+    "supertest": "^7.1.4",
     "tsc-alias": "^1.8.10",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.0.13",
+    "vitest-mock-extended": "^3.1.0"
   }
 }
