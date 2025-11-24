@@ -249,6 +249,66 @@ describe('validationMiddleware', () => {
 
 ## Integration Testing Approach
 
+### Modern Testing Terminology (2025 Industry Standard)
+
+**IMPORTANT: Clarifying Test Types to Avoid Confusion**
+
+The term "integration test" is overloaded in the industry. Here's the modern 2025 consensus:
+
+#### Test Type Hierarchy
+
+**1. Unit Tests**
+- Test single functions/methods in **complete isolation**
+- Mock **ALL** dependencies (services, repositories, databases)
+- **Example**: Test `generateAccountNumber()` with mocked repository
+- **File naming**: `*.spec.ts`
+
+**2. Integration Tests (Narrow/Component Tests)**
+- Test interaction between **2-3 components** with some real dependencies
+- **Example**: Service + Real Repository + Real Database (no HTTP layer)
+- **File naming**: `*.integration.spec.ts`
+
+**3. API Tests (Single Endpoint - Full Stack)**
+- Test **one API endpoint** through complete stack with real database
+- Full HTTP request → Controller → Service → Repository → Database
+- Tests endpoints **independently** (not workflows)
+- **Example**: `POST /accounts` with real database
+- **File naming**: `*.api.spec.ts` or `*.integration.spec.ts`
+- **Also called**: "Component Tests" or "Subcutaneous Tests" (Martin Fowler)
+
+**4. E2E Tests (Workflows - Multiple APIs)**
+- Test **complete user journeys** across **multiple endpoints**
+- Simulates real user workflows end-to-end
+- Can span multiple services/modules
+- **Example**: Create customer → Create account → Deposit → Check balance
+- **File naming**: `*.e2e.spec.ts`
+- **Location**: Usually in separate `tests/e2e/` or `e2e/` folder at project root
+
+#### Key Distinctions
+
+| Test Type | Scope | Dependencies | Speed | Use Case |
+|-----------|-------|--------------|-------|----------|
+| **Unit** | Single function | All mocked | Fastest | Business logic, validation |
+| **Integration** | 2-3 components | Partially real | Fast | Service + Repository interaction |
+| **API** | Single endpoint | Real database | Medium | Individual endpoint validation |
+| **E2E** | Multiple endpoints | All real | Slowest | Complete user workflows |
+
+#### Modern Testing Pyramid (2025)
+
+```
+        /\
+       /E2E\      ← 5-10% - Critical user journeys only
+      /------\
+     /  API  \    ← 20-30% - Key endpoints (single API)
+    /----------\
+   /Integration\ ← 20-30% - Component interactions
+  /--------------\
+ /     Unit      \ ← 40-50% - Business logic
+/------------------\
+```
+
+**Source**: Martin Fowler's "Practical Test Pyramid", Kent C. Dodds, Industry surveys 2025
+
 ### Database Testing Strategy with Prisma
 
 **Recommended: Docker + Isolated Test Databases**
@@ -390,18 +450,20 @@ afterAll(async () => {
 export { prisma };
 ```
 
-### Testing API Endpoints End-to-End
+### Testing API Endpoints (Single Endpoint Tests)
 
 **Using Supertest (Still Standard in 2025):**
 
+**Note**: These are API tests (single endpoint), NOT E2E tests (workflows).
+
 ```typescript
-// account.integration.spec.ts
+// account.api.spec.ts (or account.integration.spec.ts)
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import { createApp } from '@/app';
 import { prisma } from '../setup/test-db';
 
-describe('Account API Integration Tests', () => {
+describe('Account API Tests', () => {
   let app: Express;
 
   beforeAll(() => {
@@ -520,39 +582,100 @@ apps/backend/
     │   └── prisma-mock.ts
     ├── fixtures/
     │   └── account-fixtures.ts
-    └── e2e/                                        # Full E2E tests
-        └── account-flow.e2e.spec.ts
+    └── e2e/                                        # E2E workflow tests
+        └── customer-onboarding.e2e.spec.ts         # Multi-API workflows
 ```
 
 **Rationale:**
 - Unit tests close to implementation (easy to find and refactor)
-- Integration tests grouped by module (clear feature testing)
+- Integration/API tests grouped by module (clear feature testing)
+- E2E workflow tests in separate directory (cross-module journeys)
 - Global utilities centralized (reusable across modules)
+
+**What Goes Where:**
+
+```typescript
+// ✅ src/modules/account/services/account.service.spec.ts
+// Unit test - Service with MOCKED repository
+describe('AccountService - Unit', () => {
+  const mockRepo = mockDeep<AccountRepository>();
+  const service = new AccountService(mockRepo);
+  // Test business logic only
+});
+
+// ✅ src/modules/account/__tests__/account.integration.spec.ts
+// Integration test - Service + REAL repository + REAL database
+describe('Account Integration', () => {
+  // Test service interacting with real database
+  const service = new AccountService(new AccountRepository(prisma));
+});
+
+// ✅ src/modules/account/__tests__/account.api.spec.ts
+// API test - Single endpoint through full stack
+describe('POST /accounts - API Test', () => {
+  await request(app).post('/accounts').send({...}).expect(201);
+  // Tests ONE endpoint with real database
+});
+
+// ✅ tests/e2e/customer-onboarding.e2e.spec.ts
+// E2E test - Multiple APIs in workflow
+describe('Customer Onboarding E2E', () => {
+  // Step 1: Create customer (API A)
+  const customer = await request(app).post('/customers').send({...});
+
+  // Step 2: Create account (API B - depends on API A)
+  const account = await request(app).post('/accounts').send({
+    customerId: customer.body.id
+  });
+
+  // Step 3: Make deposit (API C - depends on API B)
+  await request(app).post('/transactions').send({
+    accountId: account.body.id,
+    amount: 100
+  });
+
+  // Step 4: Verify balance (API D)
+  const balance = await request(app).get(`/accounts/${account.body.id}/balance`);
+  expect(balance.body.balance).toBe(100);
+});
+```
 
 ### Naming Conventions (2025 Standards)
 
 **File Naming:**
 - **Unit tests**: `*.spec.ts` (co-located with source)
-- **Integration tests**: `*.integration.spec.ts`
-- **E2E tests**: `*.e2e.spec.ts`
+- **Integration tests**: `*.integration.spec.ts` (component interactions)
+- **API tests**: `*.api.spec.ts` or `*.integration.spec.ts` (single endpoint)
+- **E2E tests**: `*.e2e.spec.ts` (multi-API workflows)
 - **Test utilities**: `*.helper.ts` or `*.fixture.ts`
 
 **Test Suite Naming:**
 
 ```typescript
 // Unit tests - describe the unit
-describe('AccountService', () => {
+describe('AccountService - Unit', () => {
   describe('createAccount', () => {
     it('should generate unique account number', () => {});
     it('should throw error for invalid account type', () => {});
   });
 });
 
-// Integration tests - describe the feature
-describe('Account API', () => {
-  describe('POST /accounts', () => {
-    it('should create account and return 201', () => {});
-  });
+// Integration tests - describe component interaction
+describe('AccountService + Repository Integration', () => {
+  it('should persist account to database', () => {});
+  it('should handle database constraints', () => {});
+});
+
+// API tests - describe the endpoint
+describe('POST /accounts - API', () => {
+  it('should create account and return 201', () => {});
+  it('should validate request body', () => {});
+  it('should return 400 for invalid data', () => {});
+});
+
+// E2E tests - describe the user journey
+describe('Customer Onboarding - E2E', () => {
+  it('should complete full customer registration and account setup', () => {});
 });
 
 // Use "should" for test names (modern convention)
@@ -1510,17 +1633,27 @@ pnpm test:ui
 - **Coverage**: Vitest built-in v8 coverage
 - **Assertion**: Vitest built-in (Jest-compatible)
 
-### Testing Strategy
-- **Unit Tests**: Mock all external dependencies, co-locate with source files
-- **Integration Tests**: Real database (Docker), test complete features
+### Testing Strategy (2025 Modern Approach)
+- **Unit Tests**: Mock all external dependencies, co-locate with source files (40-50%)
+- **Integration Tests**: Real dependencies, test component interactions (20-30%)
+- **API Tests**: Single endpoint through full stack with real database (20-30%)
+- **E2E Tests**: Multi-API workflows, complete user journeys (5-10%)
 - **Test Isolation**: Table truncation between tests
 - **Parallel Execution**: Unit tests fully parallel, integration tests limited parallelism
 
+### Key Distinctions to Remember
+- **API Test ≠ E2E Test**: API tests validate single endpoints; E2E tests validate workflows
+- **Integration Test**: Can mean component interaction OR single API endpoint (terminology varies)
+- **Backend E2E**: Workflow testing via HTTP (no browser/UI needed)
+- **Subcutaneous Testing**: Testing just below the UI layer (REST API level)
+
 ### Project Structure
-- **Unit tests**: Co-located (*.spec.ts next to source)
-- **Integration tests**: Module `__tests__/` directory
+- **Unit tests**: Co-located (`*.spec.ts` next to source)
+- **Integration tests**: Module `__tests__/` directory (`*.integration.spec.ts`)
+- **API tests**: Module `__tests__/` directory (`*.api.spec.ts`)
+- **E2E tests**: Central `tests/e2e/` directory (`*.e2e.spec.ts`)
 - **Test utilities**: Central `tests/` directory
-- **Naming**: `*.spec.ts` for unit, `*.integration.spec.ts` for integration
+- **Naming**: Clear distinction between test types
 
 ### CI/CD
 - **GitHub Actions**: Separate jobs for unit, integration, and E2E tests
@@ -1537,4 +1670,29 @@ pnpm test:ui
 
 ---
 
-**Last Updated**: 2025-11-23
+## Additional Resources
+
+### Industry Standards & References
+- **Martin Fowler**: [The Practical Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html)
+- **Kent C. Dodds**: [Static vs Unit vs Integration vs E2E Tests](https://kentcdodds.com/blog/static-vs-unit-vs-integration-vs-e2e-tests)
+- **Testing Trophy**: Alternative to pyramid for frontend-heavy apps
+- **Subcutaneous Testing**: Testing below the UI (API level) for backend apps
+
+### Modern Testing Tools (2025)
+- **Vitest**: Modern, fast test runner with native ESM support
+- **Supertest**: Industry standard for HTTP endpoint testing
+- **Playwright**: For browser-based E2E testing (if needed)
+- **@faker-js/faker**: Realistic test data generation
+- **vitest-mock-extended**: Type-safe mocking for TypeScript
+
+### Key Takeaways
+1. **Terminology varies**: "Integration test" means different things to different teams
+2. **API ≠ E2E**: Single endpoint tests are NOT the same as workflow tests
+3. **Backend E2E**: Focuses on API workflows, not browser automation
+4. **Test pyramid**: More unit tests, fewer E2E tests for speed and reliability
+5. **Clear naming**: Use explicit file names to avoid confusion
+
+---
+
+**Last Updated**: 2025-11-24
+**Version**: 2.0 (Updated with modern 2025 industry standards)
