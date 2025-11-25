@@ -2,11 +2,6 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { ApiMatchers, ApiTestHelper, TestDatabase, TestFactories } from '../../../helpers';
 
-/**
- * Account API Tests
- * Tests API endpoints through the full HTTP stack (Controller → Service → Repository → Database)
- * These are single endpoint tests, NOT E2E workflow tests
- */
 describe('Account API Tests', () => {
   let testFactories: TestFactories;
 

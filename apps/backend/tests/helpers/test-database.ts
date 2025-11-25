@@ -5,26 +5,19 @@ export class TestDatabase {
   private static instance: PrismaClient | null = null;
   private static testDatabaseUrl: string;
 
-  /**
-   * Initialize the test database connection
-   * Connects to an existing test database (must be created and migrated beforehand)
-   * Uses a separate test database to avoid conflicts with development data
-   */
   static async setup(): Promise<PrismaClient> {
     if (this.instance) {
       return this.instance;
     }
 
-    // Get the test database URL from environment or create one
     const baseUrl = process.env.DATABASE_URL;
+    console.log('baseUrl', baseUrl);
     if (!baseUrl) {
       throw new Error('DATABASE_URL environment variable is not set');
     }
 
-    // Create test database URL by appending _test suffix
     this.testDatabaseUrl = baseUrl.replace(/\/([^/]+)(\?|$)/, '/$1_test$2');
 
-    // Set the test database URL for Prisma
     process.env.DATABASE_URL = this.testDatabaseUrl;
 
     const adapter = new PrismaPg({ connectionString: this.testDatabaseUrl });
@@ -34,15 +27,11 @@ export class TestDatabase {
       log: ['error', 'warn'],
     });
 
-    // Ensure database is connected
     await this.instance.$connect();
 
     return this.instance;
   }
 
-  /**
-   * Clean all data from tables (for test isolation)
-   */
   static async cleanDatabase(): Promise<void> {
     if (!this.instance) {
       throw new Error('Database not initialized. Call setup() first.');
@@ -68,9 +57,6 @@ export class TestDatabase {
     }
   }
 
-  /**
-   * Disconnect and cleanup
-   */
   static async teardown(): Promise<void> {
     if (this.instance) {
       await this.instance.$disconnect();
@@ -78,9 +64,6 @@ export class TestDatabase {
     }
   }
 
-  /**
-   * Get the database instance
-   */
   static getInstance(): PrismaClient {
     if (!this.instance) {
       throw new Error('Database not initialized. Call setup() first.');
@@ -88,9 +71,6 @@ export class TestDatabase {
     return this.instance;
   }
 
-  /**
-   * Reset database - clean all data and reset sequences
-   */
   static async reset(): Promise<void> {
     await this.cleanDatabase();
   }
