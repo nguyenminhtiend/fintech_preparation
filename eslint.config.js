@@ -25,7 +25,7 @@ export default tseslint.config(
     plugins: {
       'simple-import-sort': simpleImportSort,
     },
-    files: ['**/*.ts'],
+    files: ['**/*.ts', '**/*.tsx'],
     rules: {
       // TypeScript-specific overrides
       '@typescript-eslint/no-unused-vars': [

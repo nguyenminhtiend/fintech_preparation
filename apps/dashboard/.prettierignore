@@ -1,0 +1,14 @@
+# Build outputs
+dist
+build
+.react-router
+
+# Dependencies
+node_modules
+
+# Cache
+.turbo
+.vite
+
+# Generated files
+*.d.ts

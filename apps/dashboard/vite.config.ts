@@ -1,34 +1,8 @@
-import react from '@vitejs/plugin-react-swc';
-import path from 'path';
+import { reactRouter } from '@react-router/dev/vite';
+import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
-  },
-  server: {
-    port: 5173,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-      },
-    },
-  },
-  build: {
-    outDir: 'dist',
-    sourcemap: true,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router'],
-          'query-vendor': ['@tanstack/react-query'],
-          'chart-vendor': ['recharts'],
-        },
-      },
-    },
-  },
+  plugins: [tailwindcss(), reactRouter(), tsconfigPaths()],
 });
