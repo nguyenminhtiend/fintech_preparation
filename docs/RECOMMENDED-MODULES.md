@@ -82,24 +82,29 @@ sequenceDiagram
         API-->>Client: 200 OK (idempotent)
     else New request
         API->>DB: BEGIN TRANSACTION
-        API->>DB: SELECT ... FOR UPDATE (lock fromAccount)
-        API->>DB: Check balance >= amount
-        API->>DB: CREATE TransactionReservation (hold funds)
-        API->>DB: UPDATE fromAccount.availableBalance -= amount (version++)
-        API->>DB: CREATE Transaction (status=PENDING)
-        API->>DB: COMMIT
-        API->>Queue: Enqueue process_transfer job
-        API-->>Client: 202 Accepted
+        API->>DB: SELECT FROM accounts WHERE id=sender FOR UPDATE (lock sender only)
+        API->>DB: SELECT FROM accounts WHERE id=receiver (no lock)
+        API->>DB: Check availableBalance >= amount
+        alt Insufficient funds
+            API-->>Client: 400 Insufficient Funds
+        else Sufficient funds
+            API->>DB: CREATE TransactionReservation (hold funds)
+            API->>DB: UPDATE sender.availableBalance -= amount (version++)
+            API->>DB: CREATE Transaction (status=PENDING)
+            API->>DB: COMMIT
+            API->>Queue: Enqueue process_transfer job
+            API-->>Client: 202 Accepted
 
-        Queue->>API: Process transfer
-        API->>DB: BEGIN TRANSACTION
-        API->>DB: UPDATE fromAccount.balance -= amount (version++)
-        API->>DB: UPDATE toAccount.balance += amount (version++)
-        API->>DB: CREATE LedgerEntry (DEBIT, fromAccount)
-        API->>DB: CREATE LedgerEntry (CREDIT, toAccount)
-        API->>DB: UPDATE Transaction (status=COMPLETED)
-        API->>DB: UPDATE TransactionReservation (status=RELEASED)
-        API->>DB: COMMIT
+            Queue->>API: Process transfer async
+            API->>DB: BEGIN TRANSACTION
+            API->>DB: UPDATE sender.balance -= amount (version++)
+            API->>DB: UPDATE receiver.balance += amount (version++)
+            API->>DB: CREATE LedgerEntry (DEBIT, sender)
+            API->>DB: CREATE LedgerEntry (CREDIT, receiver)
+            API->>DB: UPDATE Transaction (status=COMPLETED)
+            API->>DB: UPDATE TransactionReservation (status=RELEASED)
+            API->>DB: COMMIT
+        end
     end
 ```
 

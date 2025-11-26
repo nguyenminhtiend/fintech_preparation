@@ -29,8 +29,6 @@ model Transaction {
   ledgerEntries           LedgerEntry[]
   transactionReservations TransactionReservation[]
 
-  @@index([referenceNumber])
-  @@index([idempotencyKey])
   @@map("transactions")
 }
 

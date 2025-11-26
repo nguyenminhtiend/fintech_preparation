@@ -3,6 +3,7 @@ import express, { type Express } from 'express';
 import helmet from 'helmet';
 
 import { createAccountModule } from './modules/account/account.module';
+import { createTransactionModule } from './modules/transaction/transaction.module';
 import { getServerConfig } from './shared/config';
 import { createDatabase } from './shared/database';
 import { errorMiddleware } from './shared/middleware';
@@ -23,8 +24,11 @@ export function createApp(): Express {
   healthRoute(app);
 
   // Modules
-  const { accountRouter } = createAccountModule(db);
+  const { accountRouter, accountRepository } = createAccountModule(db);
+  const { transactionRouter } = createTransactionModule(db, accountRepository);
+
   app.use('/accounts', accountRouter);
+  app.use('/transactions', transactionRouter);
 
   app.use(notFoundRoute);
 

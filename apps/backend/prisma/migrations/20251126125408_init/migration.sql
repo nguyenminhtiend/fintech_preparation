@@ -142,12 +142,6 @@ CREATE UNIQUE INDEX "transactions_idempotency_key_key" ON "transactions"("idempo
 CREATE UNIQUE INDEX "transactions_reference_number_key" ON "transactions"("reference_number");
 
 -- CreateIndex
-CREATE INDEX "transactions_reference_number_idx" ON "transactions"("reference_number");
-
--- CreateIndex
-CREATE INDEX "transactions_idempotency_key_idx" ON "transactions"("idempotency_key");
-
--- CreateIndex
 CREATE INDEX "transaction_reservations_account_id_status_idx" ON "transaction_reservations"("account_id", "status");
 
 -- CreateIndex

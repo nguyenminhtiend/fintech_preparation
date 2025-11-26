@@ -13,7 +13,7 @@ model LedgerEntry {
   transaction Transaction? @relation(fields: [transactionId], references: [id])
   account     Account?     @relation(fields: [accountId], references: [id])
 
-  @@index([accountId])
+  @@index([accountId, createdAt])
   @@index([transactionId])
   @@map("ledger_entries")
 }

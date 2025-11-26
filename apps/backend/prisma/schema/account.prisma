@@ -12,10 +12,6 @@ model Account {
   balance          BigInt @default(0) // Settled Balance
   availableBalance BigInt @default(0) @map("available_balance") // Balance - Holds
 
-  // CONCURRENCY CONTROL (Critical for Fintech)
-  // Increments on every update to prevent race conditions
-  version Int @default(1)
-
   status    String   @default("ACTIVE") @db.VarChar(20)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz

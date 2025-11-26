@@ -14,5 +14,6 @@ export function createAccountModule(db: Database) {
   return {
     accountRouter,
     accountService,
+    accountRepository,
   };
 }
