@@ -7,7 +7,7 @@
     "rootDirs": [".", "./.react-router/types"],
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./app/*"]
+      "@/*": ["./app/*"]
     },
     "verbatimModuleSyntax": true,
     "noEmit": true
