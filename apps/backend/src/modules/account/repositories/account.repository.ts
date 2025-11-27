@@ -25,7 +25,6 @@ export class AccountRepository implements IAccountRepository {
         currency: data.currency,
         balance: BigInt(0),
         availableBalance: BigInt(0),
-        version: 1,
       },
     });
   }

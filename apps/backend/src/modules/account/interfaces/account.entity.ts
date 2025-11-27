@@ -5,7 +5,6 @@ export interface AccountEntity {
   balance: bigint;
   availableBalance: bigint;
   currency: string;
-  version: number;
   createdAt: Date;
   updatedAt: Date;
 }

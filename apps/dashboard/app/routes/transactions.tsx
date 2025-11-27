@@ -49,12 +49,13 @@ interface TransactionHistoryResponse {
   };
 }
 
-
 export default function Transactions() {
   const [accountId, setAccountId] = useState('');
   const [transactions, setTransactions] = useState<TransactionHistoryItem[]>([]);
   const [summary, setSummary] = useState<TransactionHistoryResponse['summary'] | null>(null);
-  const [pagination, setPagination] = useState<TransactionHistoryResponse['pagination'] | null>(null);
+  const [pagination, setPagination] = useState<TransactionHistoryResponse['pagination'] | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,7 +75,7 @@ export default function Transactions() {
       }
 
       const response = await fetch(
-        `http://localhost:3000/api/v1/transactions/history?${params.toString()}`,
+        `http://localhost:3000/transactions/history?${params.toString()}`,
       );
 
       if (!response.ok) {

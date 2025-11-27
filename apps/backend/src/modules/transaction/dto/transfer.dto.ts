@@ -4,7 +4,7 @@ export interface TransferDto {
   toAccountId: string;
   amount: string; // String to avoid precision loss
   currency: string;
-  idempotencyKey?: string;
+  idempotencyKey: string;
   description?: string;
 }
 

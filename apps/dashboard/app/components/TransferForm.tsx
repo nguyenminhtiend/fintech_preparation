@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -21,6 +21,7 @@ const transferSchema = z.object({
     .string()
     .max(500, { message: 'Description must be 500 characters or less' })
     .optional(),
+  idempotencyKey: z.string().uuid({ message: 'Invalid idempotency key format' }),
 });
 
 type TransferFormData = z.infer<typeof transferSchema>;
@@ -34,10 +35,11 @@ interface TransferFormProps {
 export function TransferForm({
   onSuccess,
   onError,
-  apiEndpoint = 'http://localhost:3000/api/v1/transactions/transfer',
+  apiEndpoint = 'http://localhost:3000/transactions/transfer',
 }: TransferFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [idempotencyKey, setIdempotencyKey] = useState<string>('');
 
   const {
     register,
@@ -55,11 +57,19 @@ export function TransferForm({
     },
   });
 
+  // Generate idempotency key when component mounts
+  useEffect(() => {
+    setIdempotencyKey(crypto.randomUUID());
+  }, []);
+
   const onSubmit = async (data: TransferFormData) => {
     setError(null);
     setSuccess(null);
 
     try {
+      // Add idempotency key to form data
+      data.idempotencyKey = idempotencyKey;
+
       // Convert amount to string of cents (assuming currency is in dollars)
       const amountInCents = Math.round(parseFloat(data.amount) * 100).toString();
 
@@ -74,6 +84,7 @@ export function TransferForm({
           amount: amountInCents,
           currency: data.currency.toUpperCase(),
           description: data.description ?? undefined,
+          idempotencyKey,
         }),
       });
 
@@ -90,8 +101,9 @@ export function TransferForm({
       setSuccess(successMessage);
       onSuccess?.(result.data.id);
 
-      // Reset form
+      // Reset form and generate new idempotency key for next transfer
       reset();
+      setIdempotencyKey(crypto.randomUUID());
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
       setError(errorMessage);
@@ -164,9 +176,7 @@ export function TransferForm({
             {...register('currency')}
             disabled={isSubmitting}
           />
-          {errors.currency && (
-            <p className="text-xs text-destructive">{errors.currency.message}</p>
-          )}
+          {errors.currency && <p className="text-xs text-destructive">{errors.currency.message}</p>}
           <p className="text-xs text-muted-foreground">3-letter currency code</p>
         </div>
       </div>

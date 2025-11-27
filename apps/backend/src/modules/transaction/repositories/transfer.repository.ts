@@ -47,17 +47,15 @@ export class TransferRepository implements ITransferRepository {
         const [senderAccount] = await tx.$queryRaw<
           { id: string; balance: bigint; availableBalance: bigint; currency: string }[]
         >`
-          SELECT id, balance, "availableBalance", currency
+          SELECT
+            id,
+            balance,
+            available_balance AS "availableBalance",
+            currency
           FROM accounts
           WHERE id = ${fromAccountId}::uuid
           FOR UPDATE
         `;
-
-        // NOTE: Account existence and currency checks are done in service layer (pre-flight)
-        // Only critical balance check remains here under pessimistic lock
-        if (!senderAccount) {
-          return { success: false, error: 'Sender account not found' };
-        }
 
         // 2. CRITICAL: Validate sender has sufficient funds (must be inside transaction)
         if (senderAccount.availableBalance < amount) {

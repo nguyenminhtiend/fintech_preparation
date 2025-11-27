@@ -13,7 +13,7 @@ export const transferSchema = z
       .length(3, 'Currency must be a 3-letter code')
       .toUpperCase()
       .regex(/^[A-Z]{3}$/, 'Currency must be uppercase letters'),
-    idempotencyKey: z.string().max(255).optional(),
+    idempotencyKey: z.string().uuid('Idempotency key must be a valid UUID'),
     description: z.string().max(500).optional(),
   })
   .refine((data) => data.fromAccountId !== data.toAccountId, {

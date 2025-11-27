@@ -8,18 +8,18 @@ export function validateBody(schema: z.ZodTypeAny) {
   };
 }
 
-export function validateQuery(schema: z.ZodTypeAny) {
+export function validateQuery<T extends z.ZodTypeAny>(schema: T) {
   return (req: Request, res: Response, next: NextFunction): void => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
-    req.query = schema.parse(req.query) as any;
+    const query = schema.parse(req.query) as z.infer<T>;
+    Object.assign(req.query, query);
     next();
   };
 }
 
-export function validateParams(schema: z.ZodTypeAny) {
+export function validateParams<T extends z.ZodTypeAny>(schema: T) {
   return (req: Request, res: Response, next: NextFunction): void => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
-    req.params = schema.parse(req.params) as any;
+    const params = schema.parse(req.params) as z.infer<T>;
+    Object.assign(req.params, params);
     next();
   };
 }
