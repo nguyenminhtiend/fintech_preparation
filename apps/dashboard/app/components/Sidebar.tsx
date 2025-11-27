@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 
 const menuItems = [
   { name: 'Home', path: '/' },
+  { name: 'Transfer', path: '/transfer' },
   { name: 'About', path: '/about' },
 ];
 
