@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,7 +49,7 @@ interface TransactionHistoryResponse {
   };
 }
 
-const mockTransactions: TransactionHistoryItem[] = [
+const mockTransactionsPage1: TransactionHistoryItem[] = [
   {
     id: '1',
     referenceNumber: 'TXN-2025-001',
@@ -120,6 +120,149 @@ const mockTransactions: TransactionHistoryItem[] = [
       accountId: '123e4567-e89b-12d3-a456-426614174005',
     },
   },
+  {
+    id: '6',
+    referenceNumber: 'TXN-2025-006',
+    type: 'TRANSFER_OUT',
+    amount: '-8500',
+    currency: 'USD',
+    balanceAfter: '132000',
+    description: 'Online shopping',
+    createdAt: new Date(Date.now() - 518400000).toISOString(),
+    counterparty: {
+      accountNumber: 'ACC-2468',
+      accountId: '123e4567-e89b-12d3-a456-426614174006',
+    },
+  },
+  {
+    id: '7',
+    referenceNumber: 'TXN-2025-007',
+    type: 'TRANSFER_IN',
+    amount: '15000',
+    currency: 'USD',
+    balanceAfter: '147000',
+    description: 'Client payment',
+    createdAt: new Date(Date.now() - 604800000).toISOString(),
+    counterparty: {
+      accountNumber: 'ACC-1357',
+      accountId: '123e4567-e89b-12d3-a456-426614174007',
+    },
+  },
+  {
+    id: '8',
+    referenceNumber: 'TXN-2025-008',
+    type: 'TRANSFER_OUT',
+    amount: '-3200',
+    currency: 'USD',
+    balanceAfter: '143800',
+    description: 'Gas station',
+    createdAt: new Date(Date.now() - 691200000).toISOString(),
+    counterparty: {
+      accountNumber: 'ACC-8642',
+      accountId: '123e4567-e89b-12d3-a456-426614174008',
+    },
+  },
+  {
+    id: '9',
+    referenceNumber: 'TXN-2025-009',
+    type: 'TRANSFER_OUT',
+    amount: '-5600',
+    currency: 'USD',
+    balanceAfter: '138200',
+    description: 'Restaurant',
+    createdAt: new Date(Date.now() - 777600000).toISOString(),
+    counterparty: {
+      accountNumber: 'ACC-9753',
+      accountId: '123e4567-e89b-12d3-a456-426614174009',
+    },
+  },
+  {
+    id: '10',
+    referenceNumber: 'TXN-2025-010',
+    type: 'TRANSFER_IN',
+    amount: '30000',
+    currency: 'USD',
+    balanceAfter: '168200',
+    description: 'Bonus payment',
+    createdAt: new Date(Date.now() - 864000000).toISOString(),
+    counterparty: {
+      accountNumber: 'ACC-9876',
+      accountId: '123e4567-e89b-12d3-a456-426614174001',
+    },
+  },
+];
+
+const mockTransactionsPage2: TransactionHistoryItem[] = [
+  {
+    id: '11',
+    referenceNumber: 'TXN-2025-011',
+    type: 'TRANSFER_OUT',
+    amount: '-4500',
+    currency: 'USD',
+    balanceAfter: '163700',
+    description: 'Mobile bill',
+    createdAt: new Date(Date.now() - 950400000).toISOString(),
+    counterparty: {
+      accountNumber: 'ACC-1122',
+      accountId: '123e4567-e89b-12d3-a456-426614174011',
+    },
+  },
+  {
+    id: '12',
+    referenceNumber: 'TXN-2025-012',
+    type: 'TRANSFER_OUT',
+    amount: '-9800',
+    currency: 'USD',
+    balanceAfter: '153900',
+    description: 'Insurance premium',
+    createdAt: new Date(Date.now() - 1036800000).toISOString(),
+    counterparty: {
+      accountNumber: 'ACC-3344',
+      accountId: '123e4567-e89b-12d3-a456-426614174012',
+    },
+  },
+  {
+    id: '13',
+    referenceNumber: 'TXN-2025-013',
+    type: 'TRANSFER_IN',
+    amount: '12000',
+    currency: 'USD',
+    balanceAfter: '165900',
+    description: 'Refund',
+    createdAt: new Date(Date.now() - 1123200000).toISOString(),
+    counterparty: {
+      accountNumber: 'ACC-5566',
+      accountId: '123e4567-e89b-12d3-a456-426614174013',
+    },
+  },
+  {
+    id: '14',
+    referenceNumber: 'TXN-2025-014',
+    type: 'TRANSFER_OUT',
+    amount: '-6700',
+    currency: 'USD',
+    balanceAfter: '159200',
+    description: 'Pharmacy',
+    createdAt: new Date(Date.now() - 1209600000).toISOString(),
+    counterparty: {
+      accountNumber: 'ACC-7788',
+      accountId: '123e4567-e89b-12d3-a456-426614174014',
+    },
+  },
+  {
+    id: '15',
+    referenceNumber: 'TXN-2025-015',
+    type: 'TRANSFER_OUT',
+    amount: '-18000',
+    currency: 'USD',
+    balanceAfter: '141200',
+    description: 'Car payment',
+    createdAt: new Date(Date.now() - 1296000000).toISOString(),
+    counterparty: {
+      accountNumber: 'ACC-9900',
+      accountId: '123e4567-e89b-12d3-a456-426614174015',
+    },
+  },
 ];
 
 const mockSummary = {
@@ -131,16 +274,15 @@ const mockSummary = {
 
 export default function Transactions() {
   const [accountId, setAccountId] = useState('');
-  const [transactions, setTransactions] = useState<TransactionHistoryItem[]>(mockTransactions);
-  const [summary, setSummary] = useState<TransactionHistoryResponse['summary'] | null>(
-    mockSummary,
-  );
+  const [transactions, setTransactions] = useState<TransactionHistoryItem[]>(mockTransactionsPage1);
+  const [summary, setSummary] = useState<TransactionHistoryResponse['summary'] | null>(mockSummary);
   const [pagination, setPagination] = useState<TransactionHistoryResponse['pagination'] | null>({
-    nextCursor: null,
-    hasMore: false,
+    nextCursor: 'mock-cursor',
+    hasMore: true,
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mockPage, setMockPage] = useState(1);
 
   const fetchTransactions = async (cursor?: string) => {
     if (!accountId) {
@@ -186,7 +328,21 @@ export default function Transactions() {
 
   const handleLoadMore = () => {
     if (pagination?.nextCursor) {
-      void fetchTransactions(pagination.nextCursor);
+      if (accountId) {
+        void fetchTransactions(pagination.nextCursor);
+      } else {
+        // Load mock data page 2
+        setIsLoading(true);
+        setTimeout(() => {
+          setTransactions((prev) => [...prev, ...mockTransactionsPage2]);
+          setPagination({
+            nextCursor: null,
+            hasMore: false,
+          });
+          setMockPage(2);
+          setIsLoading(false);
+        }, 500);
+      }
     }
   };
 
