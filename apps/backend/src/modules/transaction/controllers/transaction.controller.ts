@@ -1,10 +1,17 @@
 import { type Request, type Response } from 'express';
 
-import { type TransferDto, type TransferResponseDto } from '../dto';
-import { type TransferService } from '../services';
+import {
+  type TransactionHistoryQueryDto,
+  type TransferDto,
+  type TransferResponseDto,
+} from '../dto';
+import { type TransactionHistoryService, type TransferService } from '../services';
 
 export class TransactionController {
-  constructor(private readonly transferService: TransferService) {}
+  constructor(
+    private readonly transferService: TransferService,
+    private readonly transactionHistoryService: TransactionHistoryService,
+  ) {}
 
   transfer = async (req: Request, res: Response): Promise<void> => {
     const { fromAccountId, toAccountId, amount, currency, idempotencyKey, description } =
@@ -35,5 +42,13 @@ export class TransactionController {
     };
 
     res.status(201).json(response);
+  };
+
+  getTransactionHistory = async (req: Request, res: Response): Promise<void> => {
+    const query = req.query as unknown as TransactionHistoryQueryDto;
+
+    const result = await this.transactionHistoryService.getTransactionHistory(query);
+
+    res.status(200).json(result);
   };
 }

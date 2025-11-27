@@ -24,6 +24,8 @@ export interface ITransactionRepository {
   findByIdempotencyKey(idempotencyKey: string): Promise<TransactionEntity | null>;
   findMany(filter: TransactionFilter, pagination: PaginationParams): Promise<TransactionEntity[]>;
   count(filter: TransactionFilter): Promise<number>;
+  countPending(accountId: string): Promise<number>;
+  getTotalActiveHolds(accountId: string): Promise<bigint>;
 }
 
 // Prisma database type (infrastructure layer)
@@ -94,6 +96,30 @@ export class TransactionRepository implements ITransactionRepository {
   async count(filter: TransactionFilter): Promise<number> {
     const where = this.buildWhereClause(filter);
     return await this.db.transaction.count({ where });
+  }
+
+  async countPending(accountId: string): Promise<number> {
+    return await this.db.transaction.count({
+      where: {
+        OR: [{ fromAccountId: accountId }, { toAccountId: accountId }],
+        status: 'PENDING',
+      },
+    });
+  }
+
+  async getTotalActiveHolds(accountId: string): Promise<bigint> {
+    const result = await this.db.transactionReservation.aggregate({
+      where: {
+        accountId,
+        status: 'ACTIVE',
+        expiresAt: { gt: new Date() },
+      },
+      _sum: {
+        amount: true,
+      },
+    });
+
+    return result._sum.amount ?? BigInt(0);
   }
 
   private buildWhereClause(filter: TransactionFilter): Record<string, unknown> {
