@@ -1,3 +1,4 @@
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -49,63 +50,44 @@ interface TransactionHistoryResponse {
   };
 }
 
+const fetchTransactionHistory = async (
+  accountId: string,
+  cursor?: string,
+): Promise<TransactionHistoryResponse> => {
+  const params = new URLSearchParams({ accountId });
+  if (cursor) {
+    params.append('cursor', cursor);
+  }
+
+  const response = await fetch(`http://localhost:3000/transactions/history?${params.toString()}`);
+
+  if (!response.ok) {
+    const errorData = (await response.json()) as { message?: string };
+    throw new Error(errorData.message ?? 'Failed to fetch transactions');
+  }
+
+  return response.json() as Promise<TransactionHistoryResponse>;
+};
+
 export default function Transactions() {
   const [accountId, setAccountId] = useState('');
-  const [transactions, setTransactions] = useState<TransactionHistoryItem[]>([]);
-  const [summary, setSummary] = useState<TransactionHistoryResponse['summary'] | null>(null);
-  const [pagination, setPagination] = useState<TransactionHistoryResponse['pagination'] | null>(
-    null,
-  );
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [searchAccountId, setSearchAccountId] = useState('');
 
-  const fetchTransactions = async (cursor?: string) => {
-    if (!accountId) {
-      setError('Please enter an account ID');
-      return;
-    }
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, error } =
+    useInfiniteQuery({
+      queryKey: ['transactions', searchAccountId],
+      queryFn: ({ pageParam }) => fetchTransactionHistory(searchAccountId, pageParam),
+      initialPageParam: undefined as string | undefined,
+      getNextPageParam: (lastPage) => lastPage.pagination.nextCursor ?? undefined,
+      enabled: !!searchAccountId,
+    });
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const params = new URLSearchParams({ accountId });
-      if (cursor) {
-        params.append('cursor', cursor);
-      }
-
-      const response = await fetch(
-        `http://localhost:3000/transactions/history?${params.toString()}`,
-      );
-
-      if (!response.ok) {
-        const errorData = (await response.json()) as { message?: string };
-        throw new Error(errorData.message ?? 'Failed to fetch transactions');
-      }
-
-      const result = (await response.json()) as TransactionHistoryResponse;
-
-      if (cursor) {
-        setTransactions((prev) => [...prev, ...result.data]);
-      } else {
-        setTransactions(result.data);
-      }
-
-      setSummary(result.summary);
-      setPagination(result.pagination);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleSearch = () => {
+    setSearchAccountId(accountId);
   };
 
-  const handleLoadMore = () => {
-    if (pagination?.nextCursor) {
-      void fetchTransactions(pagination.nextCursor);
-    }
-  };
+  const transactions = data?.pages.flatMap((page) => page.data) ?? [];
+  const summary = data?.pages[0]?.summary;
 
   const formatAmount = (amount: string, currency: string) => {
     const numAmount = parseFloat(amount) / 100;
@@ -141,25 +123,24 @@ export default function Transactions() {
                 value={accountId}
                 onChange={(e) => setAccountId(e.target.value)}
                 disabled={isLoading}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearch();
+                  }
+                }}
               />
               <p className="text-xs text-muted-foreground">
                 Enter the UUID of the account to view transactions
               </p>
             </div>
-            <Button
-              onClick={() => {
-                void fetchTransactions();
-              }}
-              disabled={isLoading || !accountId}
-              className="mt-6"
-            >
+            <Button onClick={handleSearch} disabled={isLoading || !accountId} className="mt-6">
               {isLoading ? 'Loading...' : 'Load Transactions'}
             </Button>
           </div>
 
-          {error && (
+          {isError && error && (
             <div className="mt-4 p-4 rounded-lg bg-destructive/10 text-destructive text-sm">
-              {error}
+              {error.message}
             </div>
           )}
         </CardContent>
@@ -253,10 +234,16 @@ export default function Transactions() {
               </TableBody>
             </Table>
 
-            {pagination?.hasMore && (
+            {hasNextPage && (
               <div className="mt-4 flex justify-center">
-                <Button onClick={handleLoadMore} disabled={isLoading} variant="outline">
-                  {isLoading ? 'Loading...' : 'Load More'}
+                <Button
+                  onClick={() => {
+                    void fetchNextPage();
+                  }}
+                  disabled={isFetchingNextPage}
+                  variant="outline"
+                >
+                  {isFetchingNextPage ? 'Loading...' : 'Load More'}
                 </Button>
               </div>
             )}
