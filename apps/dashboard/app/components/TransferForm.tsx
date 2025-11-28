@@ -21,7 +21,6 @@ const transferSchema = z.object({
     .string()
     .max(500, { message: 'Description must be 500 characters or less' })
     .optional(),
-  idempotencyKey: z.string().uuid({ message: 'Invalid idempotency key format' }),
 });
 
 type TransferFormData = z.infer<typeof transferSchema>;
@@ -96,10 +95,10 @@ export function TransferForm({
         throw new Error(errorMessage);
       }
 
-      const result = (await response.json()) as { data: { id: string } };
-      const successMessage = `Transfer successful! Transaction ID: ${result.data.id}`;
+      const result = (await response.json()) as { transactionId: string; referenceNumber: string };
+      const successMessage = `Transfer successful! Transaction ID: ${result.transactionId} | Reference: ${result.referenceNumber}`;
       setSuccess(successMessage);
-      onSuccess?.(result.data.id);
+      onSuccess?.(result.transactionId);
 
       // Reset form and generate new idempotency key for next transfer
       reset();
