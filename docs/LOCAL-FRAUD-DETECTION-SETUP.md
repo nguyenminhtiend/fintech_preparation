@@ -40,6 +40,7 @@ Complete guide to set up Node.js + ClickHouse + Tinybird for fraud detection on 
 ```
 
 **What we'll build:**
+
 - ClickHouse database running locally (Docker)
 - Node.js API server with fraud detection
 - Seed data with realistic transaction patterns
@@ -168,6 +169,7 @@ SHOW TABLES;
 ```
 
 **Expected Output:**
+
 ```
 ┌─name──────────────────────┐
 │ fraud_scores_history      │
@@ -229,6 +231,7 @@ ORDER BY user_id;
 ```
 
 **Expected Output:**
+
 ```
 ┌─user_id──┬─txn_count─┬─total_amount─┬─avg_amount─┬────────────first_txn─┬─────────────last_txn─┐
 │ user_001 │         3 │       225.50 │      75.17 │ 2025-01-15 10:00:00  │ 2025-01-15 11:30:00  │
@@ -262,6 +265,7 @@ npx tsc --init
 ### Step 2.2: Configure TypeScript
 
 **File: `tsconfig.json`**
+
 ```json
 {
   "compilerOptions": {
@@ -284,6 +288,7 @@ npx tsc --init
 ### Step 2.3: Environment Configuration
 
 **File: `.env`**
+
 ```bash
 # ClickHouse Configuration
 CLICKHOUSE_HOST=http://localhost:8123
@@ -299,6 +304,7 @@ NODE_ENV=development
 ### Step 2.4: ClickHouse Client Setup
 
 **File: `src/db/clickhouse.ts`**
+
 ```typescript
 import { createClient } from '@clickhouse/client';
 import dotenv from 'dotenv';
@@ -331,6 +337,7 @@ export async function testConnection() {
 ### Step 2.5: Fraud Detection Service
 
 **File: `src/services/fraud-detection.ts`**
+
 ```typescript
 import { clickhouse } from '../db/clickhouse';
 
@@ -361,9 +368,7 @@ export interface FraudCheckResult {
   reasons: string[];
 }
 
-export async function checkFraudScore(
-  params: FraudCheckParams
-): Promise<FraudCheckResult> {
+export async function checkFraudScore(params: FraudCheckParams): Promise<FraudCheckResult> {
   const { userId, amount, recipientId, deviceId, ipAddress, geoCountry } = params;
 
   // Query 1: Get user's transaction velocity (last 1 hour)
@@ -501,7 +506,7 @@ export async function checkFraudScore(
   let decision: 'APPROVED' | 'DENIED' | 'REQUIRE_2FA';
   if (score >= 0.85) {
     decision = 'DENIED';
-  } else if (score >= 0.60) {
+  } else if (score >= 0.6) {
     decision = 'REQUIRE_2FA';
   } else {
     decision = 'APPROVED';
@@ -516,10 +521,12 @@ export async function checkFraudScore(
 }
 
 // Helper: Log transaction event to ClickHouse
-export async function logTransactionEvent(params: FraudCheckParams & {
-  eventId: string;
-  transactionId: string;
-}) {
+export async function logTransactionEvent(
+  params: FraudCheckParams & {
+    eventId: string;
+    transactionId: string;
+  },
+) {
   const query = `
     INSERT INTO transaction_events (
       event_id, user_id, transaction_id, amount, recipient_id,
@@ -544,19 +551,21 @@ export async function logTransactionEvent(params: FraudCheckParams & {
 
   await clickhouse.insert({
     table: 'transaction_events',
-    values: [{
-      event_id: params.eventId,
-      user_id: params.userId,
-      transaction_id: params.transactionId,
-      amount: params.amount,
-      recipient_id: params.recipientId,
-      device_id: params.deviceId,
-      ip_address: params.ipAddress,
-      geo_country: params.geoCountry,
-      geo_city: 'Unknown',
-      geo_lat: 0,
-      geo_lon: 0,
-    }],
+    values: [
+      {
+        event_id: params.eventId,
+        user_id: params.userId,
+        transaction_id: params.transactionId,
+        amount: params.amount,
+        recipient_id: params.recipientId,
+        device_id: params.deviceId,
+        ip_address: params.ipAddress,
+        geo_country: params.geoCountry,
+        geo_city: 'Unknown',
+        geo_lat: 0,
+        geo_lon: 0,
+      },
+    ],
     format: 'JSONEachRow',
   });
 }
@@ -565,17 +574,19 @@ export async function logTransactionEvent(params: FraudCheckParams & {
 export async function storeFraudScore(
   transactionId: string,
   userId: string,
-  result: FraudCheckResult
+  result: FraudCheckResult,
 ) {
   await clickhouse.insert({
     table: 'fraud_scores_history',
-    values: [{
-      transaction_id: transactionId,
-      user_id: userId,
-      fraud_score: result.score,
-      decision: result.decision,
-      features: result.features,
-    }],
+    values: [
+      {
+        transaction_id: transactionId,
+        user_id: userId,
+        fraud_score: result.score,
+        decision: result.decision,
+        features: result.features,
+      },
+    ],
     format: 'JSONEachRow',
   });
 }
@@ -584,6 +595,7 @@ export async function storeFraudScore(
 ### Step 2.6: API Routes
 
 **File: `src/routes/fraud.ts`**
+
 ```typescript
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
@@ -705,7 +717,7 @@ export async function fraudRoutes(server: FastifyInstance) {
         success: true,
         data: data.data,
       };
-    }
+    },
   );
 }
 ```
@@ -713,6 +725,7 @@ export async function fraudRoutes(server: FastifyInstance) {
 ### Step 2.7: Main Server
 
 **File: `src/server.ts`**
+
 ```typescript
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
@@ -769,6 +782,7 @@ start();
 ### Step 2.8: Package Scripts
 
 **File: `package.json`** (add scripts):
+
 ```json
 {
   "scripts": {
@@ -796,10 +810,12 @@ Tinybird provides an API layer on top of ClickHouse. It's optional but useful fo
 Unfortunately, Tinybird Cloud cannot directly connect to your local ClickHouse. You have two options:
 
 **Option A: Use Tinybird's Managed ClickHouse**
+
 - Import your schema and data to Tinybird
 - Use Tinybird's API endpoints
 
 **Option B: Skip Tinybird for Local Development**
+
 - Query ClickHouse directly from Node.js (what we're doing)
 - Use Tinybird only in production
 
@@ -820,6 +836,7 @@ npm run dev
 ```
 
 **Expected output:**
+
 ```
 ✅ ClickHouse connected: { version: '23.x.x.x' }
 🚀 Server listening on http://localhost:3000
@@ -844,6 +861,7 @@ curl -X POST http://localhost:3000/api/fraud/check \
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": true,
@@ -856,7 +874,7 @@ curl -X POST http://localhost:3000/api/fraud/check \
       "velocity_24h_count": 3,
       "velocity_24h_amount": 225.5,
       "avg_amount": 75.17,
-      "amount_deviation": 0.20,
+      "amount_deviation": 0.2,
       "unique_recipients_1h": 1,
       "unique_devices_1h": 1,
       "unique_ips_1h": 1,
@@ -883,6 +901,7 @@ curl -X POST http://localhost:3000/api/fraud/check \
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": true,
@@ -927,6 +946,7 @@ curl -X POST http://localhost:3000/api/fraud/simulate \
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": true,
@@ -946,9 +966,7 @@ curl -X POST http://localhost:3000/api/fraud/simulate \
       "unique_ips_1h": 1,
       "geo_country_change": false
     },
-    "reasons": [
-      "Amount 1200 is 1.3x average"
-    ]
+    "reasons": ["Amount 1200 is 1.3x average"]
   }
 }
 ```
@@ -960,6 +978,7 @@ curl http://localhost:3000/api/fraud/history/user_003
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": true,
@@ -982,6 +1001,7 @@ curl http://localhost:3000/api/fraud/history/user_003
 ### Step 5.1: Manual ClickHouse Queries
 
 **Query 1: Check recent transactions**
+
 ```sql
 -- Enter ClickHouse CLI
 docker exec -it clickhouse-local clickhouse-client
@@ -1000,6 +1020,7 @@ LIMIT 10;
 ```
 
 **Query 2: User velocity analysis**
+
 ```sql
 SELECT
     user_id,
@@ -1016,6 +1037,7 @@ ORDER BY user_id, hour;
 ```
 
 **Query 3: Fraud scores summary**
+
 ```sql
 SELECT
     decision,
@@ -1031,6 +1053,7 @@ ORDER BY decision;
 ### Step 5.2: Load Testing Script
 
 **File: `test/load-test.sh`**
+
 ```bash
 #!/bin/bash
 
@@ -1063,6 +1086,7 @@ chmod +x test/load-test.sh
 ### Step 5.3: Verify Performance
 
 **Check query execution time:**
+
 ```sql
 -- In ClickHouse CLI
 SET send_logs_level = 'trace';
@@ -1225,6 +1249,7 @@ You now have a complete local fraud detection system with:
 ✅ Fraud score history tracking
 
 **Test the system:**
+
 ```bash
 # Start ClickHouse
 docker start clickhouse-local

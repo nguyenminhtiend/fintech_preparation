@@ -32,7 +32,7 @@ export function createTransactionModule(db: Database, accountRepository: IAccoun
   );
 
   // Routes
-  const transactionRouter = createTransactionRoutes(transactionController);
+  const { router: transactionRouter } = createTransactionRoutes(transactionController);
 
   return {
     transactionRouter,

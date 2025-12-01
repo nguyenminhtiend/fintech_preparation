@@ -266,36 +266,40 @@ This diagram illustrates the "Lambda Architecture" approach: A "Hot Path" for re
 ### The Data Flow Summary
 
 **1. Ingestion Phase**
-   - External client (Bank/Fintech) sends payment request via OpenAPI endpoint
-   - API Gateway (Fastify/Hono) receives and validates request
-   - Redis checks idempotency key and rate limits
+
+- External client (Bank/Fintech) sends payment request via OpenAPI endpoint
+- API Gateway (Fastify/Hono) receives and validates request
+- Redis checks idempotency key and rate limits
 
 **2. The Fork - Parallel Processing**
 
-   **Path A (The Hot Path < 100ms) - Real-time Decision:**
-   - Event streamed to Tinybird (ClickHouse) immediately
-   - AI Model queries ClickHouse for user velocity features
-   - Risk scoring engine evaluates transaction
-   - Returns APPROVE/DENY/REQUIRE_2FA to API Gateway
-   - Client receives instant response
+**Path A (The Hot Path < 100ms) - Real-time Decision:**
 
-   **Path B (The Cold Path) - Ledger Integrity:**
-   - Event queued in Redpanda for async processing
-   - Background worker consumes message
-   - Checks Redis for duplicate processing
-   - Executes PostgreSQL ACID transaction:
-     - Creates transaction record (PENDING)
-     - Locks account rows (prevents race conditions)
-     - Validates sufficient balance
-     - Inserts double-entry ledger records
-     - Updates account balances atomically
-     - Marks transaction as POSTED
-   - Caches idempotency key in Redis
+- Event streamed to Tinybird (ClickHouse) immediately
+- AI Model queries ClickHouse for user velocity features
+- Risk scoring engine evaluates transaction
+- Returns APPROVE/DENY/REQUIRE_2FA to API Gateway
+- Client receives instant response
+
+**Path B (The Cold Path) - Ledger Integrity:**
+
+- Event queued in Redpanda for async processing
+- Background worker consumes message
+- Checks Redis for duplicate processing
+- Executes PostgreSQL ACID transaction:
+  - Creates transaction record (PENDING)
+  - Locks account rows (prevents race conditions)
+  - Validates sufficient balance
+  - Inserts double-entry ledger records
+  - Updates account balances atomically
+  - Marks transaction as POSTED
+- Caches idempotency key in Redis
 
 **3. Visualization Layer**
-   - Internal dashboard queries PostgreSQL for balances and ledger
-   - Queries ClickHouse for analytics and trends
-   - Real-time updates via tRPC subscriptions
+
+- Internal dashboard queries PostgreSQL for balances and ledger
+- Queries ClickHouse for analytics and trends
+- Real-time updates via tRPC subscriptions
 
 ---
 
@@ -324,7 +328,7 @@ import { checkIdempotency, setIdempotency } from '../services/cache';
 
 export async function createTransferHandler(
   request: FastifyRequest<{ Body: TransferSchema }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { from, to, amount, idempotency_key } = request.body;
 
@@ -354,18 +358,17 @@ export async function createTransferHandler(
 
   // COLD PATH (Fire-and-forget - Non-blocking)
   // This does NOT wait for Kafka to finish processing
-  publishToKafka('financial.transactions.pending', transferEvent)
-    .catch(err => {
-      // Log error but don't block the response
-      logger.error('Failed to publish to Kafka', err);
-      // Kafka has retry logic and DLQ for failures
-    });
+  publishToKafka('financial.transactions.pending', transferEvent).catch((err) => {
+    // Log error but don't block the response
+    logger.error('Failed to publish to Kafka', err);
+    // Kafka has retry logic and DLQ for failures
+  });
 
   // HOT PATH (Synchronous - Blocking)
   // This WAITS for the fraud check before responding to client
   try {
     // Step 3a: Send event to ClickHouse (fire-and-forget, ~10ms)
-    sendToClickHouse(transferEvent).catch(err => {
+    sendToClickHouse(transferEvent).catch((err) => {
       logger.error('Failed to send to ClickHouse', err);
     });
 
@@ -385,7 +388,7 @@ export async function createTransferHandler(
       });
     }
 
-    if (fraudResult.score > 0.60) {
+    if (fraudResult.score > 0.6) {
       return reply.code(200).send({
         approved: true,
         requires_2fa: true,
@@ -399,7 +402,6 @@ export async function createTransferHandler(
       requires_2fa: false,
       transaction_id: transferEvent.id,
     });
-
   } catch (error) {
     logger.error('Hot path failed', error);
     return reply.code(500).send({ error: 'Fraud check failed' });
@@ -502,15 +504,15 @@ Time: 100-500ms (async)
 
 ### What Happens in Each Path:
 
-| Aspect | Hot Path | Cold Path |
-|--------|----------|-----------|
-| **Purpose** | Real-time fraud detection | Permanent ledger record |
-| **Execution** | Synchronous (blocks response) | Asynchronous (background) |
-| **Data Store** | ClickHouse (OLAP) | PostgreSQL (OLTP) |
-| **Response Time** | < 100ms | 100-500ms (doesn't block) |
-| **Consistency** | Eventual | Strong (ACID) |
-| **Client Waits?** | ✅ Yes | ❌ No |
-| **Can Fail Silently?** | ❌ No (returns error to client) | ✅ Yes (retries + DLQ) |
+| Aspect                 | Hot Path                        | Cold Path                 |
+| ---------------------- | ------------------------------- | ------------------------- |
+| **Purpose**            | Real-time fraud detection       | Permanent ledger record   |
+| **Execution**          | Synchronous (blocks response)   | Asynchronous (background) |
+| **Data Store**         | ClickHouse (OLAP)               | PostgreSQL (OLTP)         |
+| **Response Time**      | < 100ms                         | 100-500ms (doesn't block) |
+| **Consistency**        | Eventual                        | Strong (ACID)             |
+| **Client Waits?**      | ✅ Yes                          | ❌ No                     |
+| **Can Fail Silently?** | ❌ No (returns error to client) | ✅ Yes (retries + DLQ)    |
 
 ### Real-World Example:
 
@@ -568,6 +570,7 @@ publishToKafka(...)     +     await checkFraudScore(...)
 **What if the background worker processes the transaction BEFORE the fraud check completes?**
 
 This is a real possibility because:
+
 - Cold Path (Kafka → Worker → PostgreSQL) can complete in 50ms
 - Hot Path (Fraud check) can take 80-100ms
 - The worker might write to the ledger BEFORE fraud detection denies the transaction
@@ -593,7 +596,7 @@ Problem: Money already moved in ledger but client was told "denied"!
 
 export async function createTransferHandler(
   request: FastifyRequest<{ Body: TransferSchema }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { from, to, amount, idempotency_key } = request.body;
 
@@ -619,7 +622,7 @@ export async function createTransferHandler(
 
   try {
     // STEP 1: Send to ClickHouse (fire-and-forget)
-    sendToClickHouse(transferEvent).catch(err => {
+    sendToClickHouse(transferEvent).catch((err) => {
       logger.error('Failed to send to ClickHouse', err);
     });
 
@@ -646,25 +649,24 @@ export async function createTransferHandler(
       ...transferEvent,
       fraud_check: {
         score: fraudResult.score,
-        decision: fraudResult.score > 0.60 ? 'REQUIRE_2FA' : 'APPROVED',
+        decision: fraudResult.score > 0.6 ? 'REQUIRE_2FA' : 'APPROVED',
         checked_at: new Date(),
       },
       status: 'APPROVED', // Worker will only process APPROVED events
     };
 
     // COLD PATH - Publish AFTER approval (still async, but happens after decision)
-    publishToKafka('financial.transactions.approved', approvedEvent)
-      .catch(err => {
-        logger.error('Failed to publish to Kafka', err);
-        // Critical: Alert ops team - approved transaction not queued!
-        alertOpsTeam('CRITICAL: Approved transaction not queued', {
-          transaction_id: transferEvent.id,
-          error: err,
-        });
+    publishToKafka('financial.transactions.approved', approvedEvent).catch((err) => {
+      logger.error('Failed to publish to Kafka', err);
+      // Critical: Alert ops team - approved transaction not queued!
+      alertOpsTeam('CRITICAL: Approved transaction not queued', {
+        transaction_id: transferEvent.id,
+        error: err,
       });
+    });
 
     // STEP 5: Return response to client
-    if (fraudResult.score > 0.60) {
+    if (fraudResult.score > 0.6) {
       return reply.code(200).send({
         approved: true,
         requires_2fa: true,
@@ -677,7 +679,6 @@ export async function createTransferHandler(
       requires_2fa: false,
       transaction_id: transferEvent.id,
     });
-
   } catch (error) {
     logger.error('Hot path failed', error);
     return reply.code(500).send({ error: 'Fraud check failed' });
@@ -698,15 +699,7 @@ import { processDatabaseTransaction } from '../services/ledger';
 export async function processTransactionMessage(message: KafkaMessage) {
   const event = JSON.parse(message.value.toString());
 
-  const {
-    id,
-    from,
-    to,
-    amount,
-    idempotency_key,
-    fraud_check,
-    status
-  } = event;
+  const { id, from, to, amount, idempotency_key, fraud_check, status } = event;
 
   // Step 1: Check idempotency (prevent duplicate processing)
   const alreadyProcessed = await checkIdempotency(idempotency_key);
@@ -732,7 +725,7 @@ export async function processTransactionMessage(message: KafkaMessage) {
     logger.warn('Transaction not approved, skipping ledger write', {
       id,
       status,
-      fraud_score: fraud_check.score
+      fraud_score: fraud_check.score,
     });
     // Don't process denied transactions
     return;
@@ -765,7 +758,6 @@ export async function processTransactionMessage(message: KafkaMessage) {
     await setIdempotency(idempotency_key, 'PROCESSED', 86400); // 24h TTL
 
     logger.info('Transaction processed successfully', { id });
-
   } catch (error) {
     logger.error('Failed to process transaction', { id, error });
     throw error; // Will trigger retry logic
@@ -830,11 +822,7 @@ export async function reserveFunds(params: ReserveParams) {
     });
 
     // 2. Lock sender's account
-    const [account] = await tx
-      .select()
-      .from(accounts)
-      .where(eq(accounts.id, from))
-      .forUpdate();
+    const [account] = await tx.select().from(accounts).where(eq(accounts.id, from)).forUpdate();
 
     // 3. Validate sufficient funds
     if (account.balance_available < amount) {
@@ -894,8 +882,8 @@ export async function finalizeFunds(params: FinalizeParams) {
         .where(
           and(
             eq(ledgerEntries.transaction_id, transaction_id),
-            eq(ledgerEntries.direction, 'DEBIT')
-          )
+            eq(ledgerEntries.direction, 'DEBIT'),
+          ),
         );
 
       const [receiverEntry] = await tx
@@ -904,8 +892,8 @@ export async function finalizeFunds(params: FinalizeParams) {
         .where(
           and(
             eq(ledgerEntries.transaction_id, transaction_id),
-            eq(ledgerEntries.direction, 'CREDIT')
-          )
+            eq(ledgerEntries.direction, 'CREDIT'),
+          ),
         );
 
       // Update sender's balance_current
@@ -933,7 +921,6 @@ export async function finalizeFunds(params: FinalizeParams) {
           metadata: { fraud_score },
         })
         .where(eq(transactions.id, transaction_id));
-
     } else {
       // DENIED: Release hold (rollback balance_available)
       const [senderEntry] = await tx
@@ -942,8 +929,8 @@ export async function finalizeFunds(params: FinalizeParams) {
         .where(
           and(
             eq(ledgerEntries.transaction_id, transaction_id),
-            eq(ledgerEntries.direction, 'DEBIT')
-          )
+            eq(ledgerEntries.direction, 'DEBIT'),
+          ),
         );
 
       // Release the hold
@@ -969,11 +956,11 @@ export async function finalizeFunds(params: FinalizeParams) {
 
 ### Comparison of Solutions
 
-| Solution | Pros | Cons | Complexity |
-|----------|------|------|------------|
-| **1. Fraud Check Before Kafka** | Simple, prevents race condition | Slightly slower (fraud check blocks Kafka publish) | Low |
-| **2. Worker Validates Status** | Worker has defense-in-depth | Requires fraud result in message | Medium |
-| **3. Two-Phase Commit** | Most robust, allows holds | Complex, requires status management | High |
+| Solution                        | Pros                            | Cons                                               | Complexity |
+| ------------------------------- | ------------------------------- | -------------------------------------------------- | ---------- |
+| **1. Fraud Check Before Kafka** | Simple, prevents race condition | Slightly slower (fraud check blocks Kafka publish) | Low        |
+| **2. Worker Validates Status**  | Worker has defense-in-depth     | Requires fraud result in message                   | Medium     |
+| **3. Two-Phase Commit**         | Most robust, allows holds       | Complex, requires status management                | High       |
 
 ### Recommended Approach: **Combine Solutions 1 + 2**
 
@@ -1001,6 +988,7 @@ await processDatabaseTransaction(event);
 ```
 
 This ensures:
+
 - ✅ Worker never processes denied transactions
 - ✅ Fraud score is part of the audit trail
 - ✅ No race condition possible
@@ -1054,6 +1042,7 @@ Yes! Eventually, your system runs **two separate processes**:
 ### Process 1: API Server (Fastify/Hono)
 
 **File Structure:**
+
 ```
 src/
 ├── server.ts              # Entry point - starts Fastify
@@ -1071,6 +1060,7 @@ src/
 ```
 
 **Entry Point:**
+
 ```typescript
 // File: src/server.ts
 
@@ -1106,6 +1096,7 @@ start();
 ```
 
 **What it does:**
+
 1. ✅ Receives HTTP POST `/api/v1/transfer`
 2. ✅ Validates request body (Zod schema)
 3. ✅ Checks Redis for idempotency
@@ -1119,6 +1110,7 @@ start();
 ### Process 2: Worker Process (Kafka Consumer)
 
 **File Structure:**
+
 ```
 src/
 ├── worker.ts                    # Entry point - starts Kafka consumer
@@ -1134,6 +1126,7 @@ src/
 ```
 
 **Entry Point:**
+
 ```typescript
 // File: src/worker.ts
 
@@ -1163,13 +1156,7 @@ const run = async () => {
   // Process messages
   await consumer.run({
     eachBatchAutoResolve: false,
-    eachBatch: async ({
-      batch,
-      resolveOffset,
-      heartbeat,
-      isRunning,
-      isStale,
-    }) => {
+    eachBatch: async ({ batch, resolveOffset, heartbeat, isRunning, isStale }) => {
       for (const message of batch.messages) {
         if (!isRunning() || isStale()) break;
 
@@ -1204,6 +1191,7 @@ run().catch(console.error);
 ```
 
 **What it does:**
+
 1. ✅ Polls Kafka for messages (batch of 100)
 2. ✅ For each message:
    - Validates status === 'APPROVED'
@@ -1261,6 +1249,7 @@ API Server (Process 1)               Worker (Process 2)
 ### Deployment: Running Both Processes
 
 **Development (Local):**
+
 ```bash
 # Terminal 1 - API Server
 npm run dev:api
@@ -1272,6 +1261,7 @@ npm run dev:worker
 ```
 
 **package.json:**
+
 ```json
 {
   "scripts": {
@@ -1285,6 +1275,7 @@ npm run dev:worker
 ```
 
 **Production (Kubernetes):**
+
 ```yaml
 # api-server-deployment.yaml
 apiVersion: apps/v1
@@ -1292,7 +1283,7 @@ kind: Deployment
 metadata:
   name: api-server
 spec:
-  replicas: 3  # Scale horizontally
+  replicas: 3 # Scale horizontally
   selector:
     matchLabels:
       app: api-server
@@ -1302,16 +1293,16 @@ spec:
         app: api-server
     spec:
       containers:
-      - name: api-server
-        image: your-registry/api-server:latest
-        command: ["node", "dist/server.js"]
-        ports:
-        - containerPort: 3000
-        env:
-        - name: KAFKA_BROKERS
-          value: "kafka:9092"
-        - name: REDIS_URL
-          value: "redis://redis:6379"
+        - name: api-server
+          image: your-registry/api-server:latest
+          command: ['node', 'dist/server.js']
+          ports:
+            - containerPort: 3000
+          env:
+            - name: KAFKA_BROKERS
+              value: 'kafka:9092'
+            - name: REDIS_URL
+              value: 'redis://redis:6379'
 ---
 # worker-deployment.yaml
 apiVersion: apps/v1
@@ -1319,7 +1310,7 @@ kind: Deployment
 metadata:
   name: transaction-worker
 spec:
-  replicas: 5  # Scale based on Kafka lag
+  replicas: 5 # Scale based on Kafka lag
   selector:
     matchLabels:
       app: transaction-worker
@@ -1329,28 +1320,29 @@ spec:
         app: transaction-worker
     spec:
       containers:
-      - name: worker
-        image: your-registry/worker:latest
-        command: ["node", "dist/worker.js"]
-        env:
-        - name: KAFKA_BROKERS
-          value: "kafka:9092"
-        - name: POSTGRES_URL
-          value: "postgresql://user:pass@postgres:5432/ledger"
-        - name: REDIS_URL
-          value: "redis://redis:6379"
+        - name: worker
+          image: your-registry/worker:latest
+          command: ['node', 'dist/worker.js']
+          env:
+            - name: KAFKA_BROKERS
+              value: 'kafka:9092'
+            - name: POSTGRES_URL
+              value: 'postgresql://user:pass@postgres:5432/ledger'
+            - name: REDIS_URL
+              value: 'redis://redis:6379'
 ```
 
 ---
 
 ### Scaling Strategy
 
-| Process | Scale Based On | Metrics |
-|---------|---------------|---------|
-| **API Server** | HTTP traffic | Requests/sec, P99 latency |
-| **Worker** | Kafka lag | Consumer lag, processing rate |
+| Process        | Scale Based On | Metrics                       |
+| -------------- | -------------- | ----------------------------- |
+| **API Server** | HTTP traffic   | Requests/sec, P99 latency     |
+| **Worker**     | Kafka lag      | Consumer lag, processing rate |
 
 **Scaling Workers:**
+
 ```bash
 # Check Kafka consumer lag
 kafka-consumer-groups --bootstrap-server localhost:9092 \
@@ -1368,6 +1360,7 @@ kubectl scale deployment transaction-worker --replicas=10
 ```
 
 **Auto-scaling (HPA):**
+
 ```yaml
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -1381,26 +1374,26 @@ spec:
   minReplicas: 3
   maxReplicas: 20
   metrics:
-  - type: External
-    external:
-      metric:
-        name: kafka_consumer_lag
-      target:
-        type: AverageValue
-        averageValue: "500"  # Scale up if lag > 500
+    - type: External
+      external:
+        metric:
+          name: kafka_consumer_lag
+        target:
+          type: AverageValue
+          averageValue: '500' # Scale up if lag > 500
 ```
 
 ---
 
 ### Why Two Processes?
 
-| Reason | Benefit |
-|--------|---------|
-| **Separation of Concerns** | API handles user requests, Worker handles database |
-| **Independent Scaling** | Scale API for traffic, Worker for throughput |
-| **Fault Isolation** | API crash doesn't affect ledger processing |
-| **Async Processing** | Client gets fast response, heavy work happens later |
-| **Resource Optimization** | API: CPU-bound, Worker: I/O-bound (different requirements) |
+| Reason                     | Benefit                                                    |
+| -------------------------- | ---------------------------------------------------------- |
+| **Separation of Concerns** | API handles user requests, Worker handles database         |
+| **Independent Scaling**    | Scale API for traffic, Worker for throughput               |
+| **Fault Isolation**        | API crash doesn't affect ledger processing                 |
+| **Async Processing**       | Client gets fast response, heavy work happens later        |
+| **Resource Optimization**  | API: CPU-bound, Worker: I/O-bound (different requirements) |
 
 ---
 
@@ -1433,11 +1426,13 @@ This is the **core of the architecture**: One process for speed (API), one for r
 ### The Problem
 
 After the API returns `HTTP 200 { approved: true, transaction_id: "txn_123" }`, the client needs to know:
+
 - ✅ When the ledger is updated (Cold Path completes)
 - ✅ The final transaction status (POSTED, FAILED, etc.)
 - ✅ The updated account balance
 
 **Timeline:**
+
 ```
 Time: 0ms     Client sends POST /transfer
 Time: 80ms    API returns: { approved: true, transaction_id: "txn_123" }
@@ -1496,6 +1491,7 @@ Client                 WebSocket Server         Worker Process
 **Implementation:**
 
 **WebSocket Server:**
+
 ```typescript
 // File: src/websocket-server.ts
 
@@ -1564,6 +1560,7 @@ httpServer.listen(3001, () => {
 ```
 
 **Worker Publishes Updates:**
+
 ```typescript
 // File: src/workers/transaction-processor.ts
 
@@ -1583,30 +1580,36 @@ export async function processTransactionMessage(message: KafkaMessage) {
     // ============================================================
     // PUBLISH UPDATE TO WEBSOCKET SERVER VIA REDIS PUB/SUB
     // ============================================================
-    await redis.publish('transaction_updates', JSON.stringify({
-      user_id: event.from,
-      transaction_id: event.id,
-      status: 'POSTED',
-      balance: updatedBalance,
-      timestamp: new Date(),
-    }));
+    await redis.publish(
+      'transaction_updates',
+      JSON.stringify({
+        user_id: event.from,
+        transaction_id: event.id,
+        status: 'POSTED',
+        balance: updatedBalance,
+        timestamp: new Date(),
+      }),
+    );
 
     console.log(`Published transaction update for ${event.id}`);
-
   } catch (error) {
     // On failure, publish error status
-    await redis.publish('transaction_updates', JSON.stringify({
-      user_id: event.from,
-      transaction_id: event.id,
-      status: 'FAILED',
-      error: error.message,
-      timestamp: new Date(),
-    }));
+    await redis.publish(
+      'transaction_updates',
+      JSON.stringify({
+        user_id: event.from,
+        transaction_id: event.id,
+        status: 'FAILED',
+        error: error.message,
+        timestamp: new Date(),
+      }),
+    );
   }
 }
 ```
 
 **Client Code (React):**
+
 ```typescript
 // File: frontend/src/hooks/useTransactionStatus.ts
 
@@ -1699,7 +1702,7 @@ import { createClient } from 'redis';
 
 export async function eventsHandler(
   request: FastifyRequest<{ Querystring: { userId: string } }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { userId } = request.query;
 
@@ -1707,7 +1710,7 @@ export async function eventsHandler(
   reply.raw.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
+    Connection: 'keep-alive',
   });
 
   // Subscribe to Redis for this user's updates
@@ -1738,6 +1741,7 @@ server.get('/api/v1/events', eventsHandler);
 ```
 
 **Client (React):**
+
 ```typescript
 useEffect(() => {
   const eventSource = new EventSource(`/api/v1/events?userId=user_123`);
@@ -1763,16 +1767,12 @@ useEffect(() => {
 
 export async function getTransactionStatus(
   request: FastifyRequest<{ Params: { id: string } }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
   // Query PostgreSQL for transaction status
-  const transaction = await db
-    .select()
-    .from(transactions)
-    .where(eq(transactions.id, id))
-    .limit(1);
+  const transaction = await db.select().from(transactions).where(eq(transactions.id, id)).limit(1);
 
   if (!transaction) {
     return reply.code(404).send({ error: 'Transaction not found' });
@@ -1791,6 +1791,7 @@ server.get('/api/v1/transactions/:id', getTransactionStatus);
 ```
 
 **Client (React):**
+
 ```typescript
 function useTransactionPolling(transactionId: string) {
   const [status, setStatus] = useState('PENDING');
@@ -1828,11 +1829,7 @@ export async function sendWebhook(event: TransactionEvent) {
   const { user_id, transaction_id, status } = event;
 
   // Get user's webhook URL from database
-  const user = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, user_id))
-    .limit(1);
+  const user = await db.select().from(users).where(eq(users.id, user_id)).limit(1);
 
   if (!user.webhook_url) {
     return; // No webhook configured
@@ -1865,6 +1862,7 @@ export async function sendWebhook(event: TransactionEvent) {
 ```
 
 **Worker publishes webhook event:**
+
 ```typescript
 // After processing transaction
 await processDatabaseTransaction(event);
@@ -1881,12 +1879,12 @@ await publishToKafka('webhooks.transaction.updated', {
 
 ### Comparison of Solutions
 
-| Solution | Pros | Cons | Best For |
-|----------|------|------|----------|
-| **WebSocket** | Real-time, bidirectional | Complex infrastructure, scaling | Consumer apps (mobile/web) |
-| **SSE** | Simple, built-in browser support | Unidirectional only | Real-time dashboards |
-| **Polling** | Simple, no special infrastructure | Inefficient, delayed updates | Simple apps, low traffic |
-| **Webhooks** | Reliable, async | Client must host endpoint | B2B integrations (banks) |
+| Solution      | Pros                              | Cons                            | Best For                   |
+| ------------- | --------------------------------- | ------------------------------- | -------------------------- |
+| **WebSocket** | Real-time, bidirectional          | Complex infrastructure, scaling | Consumer apps (mobile/web) |
+| **SSE**       | Simple, built-in browser support  | Unidirectional only             | Real-time dashboards       |
+| **Polling**   | Simple, no special infrastructure | Inefficient, delayed updates    | Simple apps, low traffic   |
+| **Webhooks**  | Reliable, async                   | Client must host endpoint       | B2B integrations (banks)   |
 
 ---
 
@@ -1926,6 +1924,7 @@ await publishToKafka('webhooks.transaction.updated', {
 ### Summary
 
 **The Flow:**
+
 1. Client sends POST `/transfer` → Gets `transaction_id` (~80ms)
 2. Client connects to WebSocket → Subscribes to updates
 3. Worker finishes processing → Publishes to Redis Pub/Sub
@@ -2287,40 +2286,20 @@ Redis Cache Keys:
 ### Component Interaction Summary
 
 **Phase 1: Request Ingestion (0-10ms)**
+
 1. Client sends POST request to API Gateway
 2. Fastify/Hono validates request schema
 3. Redis checks idempotency key (prevent duplicates)
 4. Redis increments rate limiter (prevent abuse)
 
-**Phase 2: The Fork (10-15ms)**
-5. Event published to Kafka/Redpanda (async, non-blocking)
-6. Event sent to Tinybird/ClickHouse (fire-and-forget)
+**Phase 2: The Fork (10-15ms)** 5. Event published to Kafka/Redpanda (async, non-blocking) 6. Event sent to Tinybird/ClickHouse (fire-and-forget)
 
-**Phase 3: Hot Path - Fraud Detection (15-80ms)**
-7. ClickHouse stores event in `transaction_events` table
-8. AI model queries ClickHouse for user velocity features
-9. Fraud scoring engine evaluates risk (0.0-1.0)
-10. Decision engine returns APPROVE/DENY/REQUIRE_2FA
-11. Response sent back to client (total ~80ms)
+**Phase 3: Hot Path - Fraud Detection (15-80ms)** 7. ClickHouse stores event in `transaction_events` table 8. AI model queries ClickHouse for user velocity features 9. Fraud scoring engine evaluates risk (0.0-1.0) 10. Decision engine returns APPROVE/DENY/REQUIRE_2FA 11. Response sent back to client (total ~80ms)
 
-**Phase 4: Cold Path - Ledger Processing (Async, ~50-100ms)**
-12. Background worker polls Kafka for messages (batch: 100)
-13. For each message:
-    - Check Redis idempotency cache
-    - If cached: skip (already processed)
-    - If new: start PostgreSQL transaction
-14. PostgreSQL ACID transaction:
-    - Insert into `transactions` (PENDING)
-    - Lock `accounts` rows with `SELECT FOR UPDATE`
-    - Validate sufficient balance
-    - Insert two `ledger_entries` (DEBIT + CREDIT)
-    - Update `accounts` balances atomically
-    - Update `transactions` status to POSTED
-    - Commit (all-or-nothing)
-15. Cache idempotency key in Redis (24h TTL)
-16. Commit Kafka offset (acknowledge processing)
+**Phase 4: Cold Path - Ledger Processing (Async, ~50-100ms)** 12. Background worker polls Kafka for messages (batch: 100) 13. For each message: - Check Redis idempotency cache - If cached: skip (already processed) - If new: start PostgreSQL transaction 14. PostgreSQL ACID transaction: - Insert into `transactions` (PENDING) - Lock `accounts` rows with `SELECT FOR UPDATE` - Validate sufficient balance - Insert two `ledger_entries` (DEBIT + CREDIT) - Update `accounts` balances atomically - Update `transactions` status to POSTED - Commit (all-or-nothing) 15. Cache idempotency key in Redis (24h TTL) 16. Commit Kafka offset (acknowledge processing)
 
 **Phase 5: Error Handling**
+
 - If PostgreSQL transaction fails:
   - Retry with exponential backoff (2s, 4s, 8s)
   - After 3 failed attempts: move to Dead Letter Queue
@@ -2328,6 +2307,7 @@ Redis Cache Keys:
   - Manual investigation required
 
 **Caching Strategy**
+
 - **Idempotency**: 24-hour TTL prevents duplicate processing
 - **Rate Limiting**: Per-minute/hour counters prevent abuse
 - **Balance Cache**: 5-second TTL reduces DB load (invalidated on writes)

@@ -9,7 +9,7 @@ export function createAccountModule(db: Database) {
   const accountRepository = new AccountRepository(db);
   const accountService = new AccountService(accountRepository);
   const accountController = new AccountController(accountService);
-  const accountRouter = createAccountRouter(accountController);
+  const { router: accountRouter } = createAccountRouter(accountController);
 
   return {
     accountRouter,

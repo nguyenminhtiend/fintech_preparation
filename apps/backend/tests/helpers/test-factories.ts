@@ -35,8 +35,7 @@ export class TestFactories {
   async createCustomer(options: CreateTestCustomerOptions = {}) {
     return await this.db.customer.create({
       data: {
-        customerCode:
-          options.customerCode ?? `CUST${faker.string.alphanumeric(8).toUpperCase()}`,
+        customerCode: options.customerCode ?? `CUST${faker.string.alphanumeric(8).toUpperCase()}`,
         status: options.status ?? 'ACTIVE',
         kycStatus: options.kycStatus ?? 'VERIFIED',
         riskScore: options.riskScore ?? 0,
@@ -51,8 +50,7 @@ export class TestFactories {
    * Create a test account
    */
   async createAccount(options: CreateTestAccountOptions = {}) {
-    const accountNumber =
-      options.accountNumber ?? this.generateAccountNumber();
+    const accountNumber = options.accountNumber ?? this.generateAccountNumber();
 
     return await this.db.account.create({
       data: {

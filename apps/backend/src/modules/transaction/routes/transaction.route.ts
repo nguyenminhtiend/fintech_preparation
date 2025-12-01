@@ -1,6 +1,4 @@
-import { type Router } from 'express';
-
-import { createRouterFromOpenApi } from '@shared/utils';
+import { createRouterFromOpenApi, type OpenApiRouteMetadata } from '@shared/utils';
 
 import { type TransactionController } from '../controllers';
 import {
@@ -9,38 +7,45 @@ import {
 } from '../schemas/transaction-history.schema';
 import { transferResponseSchema, transferSchema } from '../schemas/transfer.schema';
 
-export const routes = [
-  {
-    method: 'post' as const,
-    path: '/transfer',
-    tags: ['Transactions'],
-    summary: 'Transfer funds between accounts',
-    handler: 'transfer',
-    request: { body: transferSchema },
-    responses: {
-      200: { schema: transferResponseSchema, description: 'Transfer completed successfully' },
-      400: { description: 'Invalid request' },
-      409: { description: 'Conflict - insufficient funds or duplicate request' },
-    },
-  },
-  {
-    method: 'get' as const,
-    path: '/history',
-    tags: ['Transactions'],
-    summary: 'Get transaction history for an account',
-    handler: 'getTransactionHistory',
-    request: { query: transactionHistoryQuerySchema },
-    responses: {
-      200: {
-        schema: transactionHistoryResponseSchema,
-        description: 'Transaction history retrieved successfully',
+export function createTransactionRoutes(controller: TransactionController) {
+  const routes = [
+    {
+      method: 'post' as const,
+      path: '/transfer',
+      tags: ['Transactions'] as const,
+      summary: 'Transfer funds between accounts',
+      handler: controller.transfer, // ✅ Direct reference - TypeScript validates!
+      request: { body: transferSchema },
+      responses: {
+        200: { schema: transferResponseSchema, description: 'Transfer completed successfully' },
+        400: { description: 'Invalid request' },
+        409: { description: 'Conflict - insufficient funds or duplicate request' },
       },
-      400: { description: 'Invalid request' },
-      404: { description: 'Account not found' },
     },
-  },
-] as const;
+    {
+      method: 'get' as const,
+      path: '/history',
+      tags: ['Transactions'] as const,
+      summary: 'Get transaction history for an account',
+      handler: controller.getTransactionHistory, // ✅ Direct reference - TypeScript validates!
+      request: { query: transactionHistoryQuerySchema },
+      responses: {
+        200: {
+          schema: transactionHistoryResponseSchema,
+          description: 'Transaction history retrieved successfully',
+        },
+        400: { description: 'Invalid request' },
+        404: { description: 'Account not found' },
+      },
+    },
+  ] as const;
 
-export function createTransactionRoutes(controller: TransactionController): Router {
-  return createRouterFromOpenApi(routes, controller);
+  const router = createRouterFromOpenApi(routes);
+
+  // Export metadata without handler functions for OpenAPI generation
+  const metadata: readonly OpenApiRouteMetadata[] = routes.map(
+    ({ handler: _handler, ...route }) => route,
+  );
+
+  return { router, metadata };
 }

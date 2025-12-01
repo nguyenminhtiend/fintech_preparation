@@ -616,9 +616,7 @@ export class ClickHouseAnalyticsService {
     return await result.json<TransactionMetrics>();
   }
 
-  async detectFraudAnomalies(
-    lookbackMinutes: number = 5
-  ): Promise<FraudAlert[]> {
+  async detectFraudAnomalies(lookbackMinutes: number = 5): Promise<FraudAlert[]> {
     const query = `
       WITH account_stats AS (
         SELECT
@@ -716,7 +714,7 @@ export class ClickHouseAnalyticsService {
     accountId: string,
     startDate: Date,
     endDate: Date,
-    limit: number = 100
+    limit: number = 100,
   ) {
     const query = `
       SELECT
@@ -793,9 +791,7 @@ router.get('/realtime-metrics', async (req, res) => {
 router.get('/fraud-alerts', async (req, res) => {
   try {
     const { lookback_minutes = 5 } = req.query;
-    const alerts = await analytics.detectFraudAnomalies(
-      parseInt(lookback_minutes as string)
-    );
+    const alerts = await analytics.detectFraudAnomalies(parseInt(lookback_minutes as string));
 
     res.json({
       success: true,
@@ -834,7 +830,7 @@ router.get('/transaction-history/:accountId', async (req, res) => {
       accountId,
       new Date(start_date as string),
       new Date(end_date as string),
-      parseInt(limit as string)
+      parseInt(limit as string),
     );
 
     res.json({
@@ -916,13 +912,13 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     command:
-      - "postgres"
-      - "-c"
-      - "wal_level=logical"
-      - "-c"
-      - "max_replication_slots=10"
+      - 'postgres'
+      - '-c'
+      - 'wal_level=logical'
+      - '-c'
+      - 'max_replication_slots=10'
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -937,13 +933,13 @@ services:
     depends_on:
       - zookeeper
     ports:
-      - "9092:9092"
+      - '9092:9092'
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
 
   debezium:
     image: debezium/connect:2.4
@@ -951,7 +947,7 @@ services:
       - kafka
       - postgres
     ports:
-      - "8083:8083"
+      - '8083:8083'
     environment:
       BOOTSTRAP_SERVERS: kafka:9092
       GROUP_ID: debezium
@@ -962,8 +958,8 @@ services:
   clickhouse:
     image: clickhouse/clickhouse-server:23.8
     ports:
-      - "8123:8123"
-      - "9000:9000"
+      - '8123:8123'
+      - '9000:9000'
     environment:
       CLICKHOUSE_DB: fintech_analytics
       CLICKHOUSE_USER: default

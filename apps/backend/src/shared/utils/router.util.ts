@@ -3,12 +3,12 @@ import { type ZodSchema } from 'zod';
 
 import { validateBody, validateParams, validateQuery } from '@shared/middleware';
 
-interface OpenApiRoute {
+export interface OpenApiRoute {
   method: 'get' | 'post' | 'put' | 'patch' | 'delete';
   path: string;
   tags: readonly string[];
   summary: string;
-  handler: string;
+  handler: RequestHandler;
   request?: {
     body?: ZodSchema;
     params?: ZodSchema;
@@ -17,11 +17,10 @@ interface OpenApiRoute {
   responses: Record<number, { schema?: ZodSchema; description: string }>;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function createRouterFromOpenApi<T extends Record<string, any>>(
-  routes: readonly OpenApiRoute[],
-  controller: T,
-): Router {
+// Type for exporting route metadata (without handler function) for OpenAPI generation
+export type OpenApiRouteMetadata = Omit<OpenApiRoute, 'handler'>;
+
+export function createRouterFromOpenApi(routes: readonly OpenApiRoute[]): Router {
   const router = Router();
 
   routes.forEach((route) => {
@@ -40,14 +39,7 @@ export function createRouterFromOpenApi<T extends Record<string, any>>(
     // Convert OpenAPI format {id} to Express format :id
     const expressPath = route.path.replace(/\{(\w+)\}/g, ':$1');
 
-    const handler = controller[route.handler as keyof T];
-    if (!handler || typeof handler !== 'function') {
-      throw new Error(
-        `Handler '${route.handler}' not found on controller for route ${route.method.toUpperCase()} ${route.path}`,
-      );
-    }
-
-    router[route.method](expressPath, ...middlewares, handler as RequestHandler);
+    router[route.method](expressPath, ...middlewares, route.handler);
   });
 
   return router;

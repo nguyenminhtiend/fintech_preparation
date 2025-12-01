@@ -1,6 +1,7 @@
 # Testing Guide: Node.js/Prisma/Express.js Best Practices (2025)
 
 ## Table of Contents
+
 - [Overview](#overview)
 - [Project Context](#project-context)
 - [Framework Selection](#framework-selection)
@@ -24,15 +25,17 @@ This guide provides comprehensive best practices for setting up unit tests and i
 ## Project Context
 
 **Current Stack:**
+
 - Monorepo setup using pnpm workspaces
 - TypeScript-based backend (Node.js >= 22.0.0)
 - Express.js 5.0.1 for API layer
 - Prisma 7.0.0 with PostgreSQL
 - Modular architecture with feature-based modules
 - ESM modules (`"type": "module"`)
-- Path aliases configured (@shared/*, @modules/*)
+- Path aliases configured (@shared/_, @modules/_)
 
 **Current Status:**
+
 - No existing test infrastructure
 - Modular architecture already supports dependency injection
 - Ready for testing implementation
@@ -53,6 +56,7 @@ This guide provides comprehensive best practices for setting up unit tests and i
 6. **Jest Compatibility**: 95% API compatible, easy migration if needed
 
 **Performance Metrics (2025):**
+
 - Cold runs: Up to 4x faster than Jest
 - Memory usage: 30% lower (800MB vs 1.2GB on large codebases)
 - Watch mode: Near-instant with HMR
@@ -60,11 +64,13 @@ This guide provides comprehensive best practices for setting up unit tests and i
 ### Alternative: Jest
 
 **Choose Jest only if:**
+
 - You have concerns about Vitest's ecosystem maturity
 - You need React Native support (mandatory)
 - Team has extensive Jest experience
 
 **Jest Drawbacks for Our Setup:**
+
 - Requires ts-jest or babel-jest configuration
 - Experimental ESM support only
 - Slower performance, especially in watch mode
@@ -106,7 +112,7 @@ describe('AccountController', () => {
   it('should create account successfully', async () => {
     // Mock service
     const mockService: AccountService = {
-      create: vi.fn().resolveValue({ id: '123', accountNumber: 'ACC001' })
+      create: vi.fn().resolveValue({ id: '123', accountNumber: 'ACC001' }),
     };
 
     const controller = new AccountController(mockService);
@@ -126,6 +132,7 @@ describe('AccountController', () => {
 **Recommended Approach: vitest-mock-extended**
 
 **Installation:**
+
 ```bash
 pnpm add -D vitest vitest-mock-extended
 ```
@@ -139,7 +146,7 @@ import { mockDeep, mockReset, DeepMockProxy } from 'vitest-mock-extended';
 import { beforeEach, vi } from 'vitest';
 
 vi.mock('@/shared/database', () => ({
-  prisma: mockDeep<PrismaClient>()
+  prisma: mockDeep<PrismaClient>(),
 }));
 
 beforeEach(() => {
@@ -162,12 +169,13 @@ it('should find account by id', async () => {
 
   expect(result).toEqual(mockAccount);
   expect(prismaMock.account.findUnique).toHaveBeenCalledWith({
-    where: { id: '1' }
+    where: { id: '1' },
   });
 });
 ```
 
 **Alternative Libraries:**
+
 - `prisma-mock-vitest`: More comprehensive, stores data in memory
 - `vitest-prisma-mock`: Specialized Prisma mocking
 
@@ -191,7 +199,7 @@ describe('AccountService', () => {
     const expectedAccount = {
       id: '1',
       ...input,
-      accountNumber: 'SAV1234567890'
+      accountNumber: 'SAV1234567890',
     };
 
     mockRepository.create.mockResolvedValue(expectedAccount);
@@ -258,17 +266,20 @@ The term "integration test" is overloaded in the industry. Here's the modern 202
 #### Test Type Hierarchy
 
 **1. Unit Tests**
+
 - Test single functions/methods in **complete isolation**
 - Mock **ALL** dependencies (services, repositories, databases)
 - **Example**: Test `generateAccountNumber()` with mocked repository
 - **File naming**: `*.spec.ts`
 
 **2. Integration Tests (Narrow/Component Tests)**
+
 - Test interaction between **2-3 components** with some real dependencies
 - **Example**: Service + Real Repository + Real Database (no HTTP layer)
 - **File naming**: `*.integration.spec.ts`
 
 **3. API Tests (Single Endpoint - Full Stack)**
+
 - Test **one API endpoint** through complete stack with real database
 - Full HTTP request → Controller → Service → Repository → Database
 - Tests endpoints **independently** (not workflows)
@@ -277,6 +288,7 @@ The term "integration test" is overloaded in the industry. Here's the modern 202
 - **Also called**: "Component Tests" or "Subcutaneous Tests" (Martin Fowler)
 
 **4. E2E Tests (Workflows - Multiple APIs)**
+
 - Test **complete user journeys** across **multiple endpoints**
 - Simulates real user workflows end-to-end
 - Can span multiple services/modules
@@ -286,12 +298,12 @@ The term "integration test" is overloaded in the industry. Here's the modern 202
 
 #### Key Distinctions
 
-| Test Type | Scope | Dependencies | Speed | Use Case |
-|-----------|-------|--------------|-------|----------|
-| **Unit** | Single function | All mocked | Fastest | Business logic, validation |
-| **Integration** | 2-3 components | Partially real | Fast | Service + Repository interaction |
-| **API** | Single endpoint | Real database | Medium | Individual endpoint validation |
-| **E2E** | Multiple endpoints | All real | Slowest | Complete user workflows |
+| Test Type       | Scope              | Dependencies   | Speed   | Use Case                         |
+| --------------- | ------------------ | -------------- | ------- | -------------------------------- |
+| **Unit**        | Single function    | All mocked     | Fastest | Business logic, validation       |
+| **Integration** | 2-3 components     | Partially real | Fast    | Service + Repository interaction |
+| **API**         | Single endpoint    | Real database  | Medium  | Individual endpoint validation   |
+| **E2E**         | Multiple endpoints | All real       | Slowest | Complete user workflows          |
 
 #### Modern Testing Pyramid (2025)
 
@@ -327,9 +339,9 @@ services:
       POSTGRES_PASSWORD: testpass
       POSTGRES_DB: fintech_test
     ports:
-      - "5433:5432"
+      - '5433:5432'
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U testuser"]
+      test: ['CMD-SHELL', 'pg_isready -U testuser']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -365,11 +377,11 @@ export default defineConfig({
     poolOptions: {
       threads: {
         singleThread: false,
-        maxThreads: 4
-      }
+        maxThreads: 4,
+      },
     },
-    globalSetup: './tests/setup/global-setup.ts'
-  }
+    globalSetup: './tests/setup/global-setup.ts',
+  },
 });
 
 // tests/setup/global-setup.ts
@@ -403,17 +415,21 @@ export async function setup() {
 **Two Strategies:**
 
 **1. Full Migration (Recommended for CI/CD):**
+
 ```bash
 prisma migrate deploy
 ```
+
 - Applies all migrations sequentially
 - Ensures test DB matches production schema exactly
 - Slower but more accurate
 
 **2. Schema Push (Faster for Development):**
+
 ```bash
 prisma db push --skip-generate --accept-data-loss
 ```
+
 - Syncs schema directly without migrations
 - Much faster
 - Good for rapid iteration
@@ -439,7 +455,7 @@ beforeEach(async () => {
   await prisma.$transaction([
     prisma.account.deleteMany(),
     prisma.customer.deleteMany(),
-    prisma.transaction.deleteMany()
+    prisma.transaction.deleteMany(),
   ]);
 });
 
@@ -478,7 +494,7 @@ describe('Account API Tests', () => {
     it('should create a new account', async () => {
       // Seed test customer
       const customer = await prisma.customer.create({
-        data: { name: 'Test User', email: 'test@example.com' }
+        data: { name: 'Test User', email: 'test@example.com' },
       });
 
       const response = await request(app)
@@ -486,20 +502,20 @@ describe('Account API Tests', () => {
         .send({
           customerId: customer.id,
           accountType: 'SAVINGS',
-          currency: 'USD'
+          currency: 'USD',
         })
         .expect(201);
 
       expect(response.body).toMatchObject({
         accountType: 'SAVINGS',
         currency: 'USD',
-        balance: '0'
+        balance: '0',
       });
       expect(response.body.accountNumber).toMatch(/^SAV\d{10}$/);
 
       // Verify in database
       const dbAccount = await prisma.account.findUnique({
-        where: { id: response.body.id }
+        where: { id: response.body.id },
       });
       expect(dbAccount).toBeTruthy();
     });
@@ -510,7 +526,7 @@ describe('Account API Tests', () => {
         .send({
           customerId: 'cust-123',
           accountType: 'INVALID',
-          currency: 'USD'
+          currency: 'USD',
         })
         .expect(400);
 
@@ -538,14 +554,15 @@ await api
 
 **Comparison:**
 
-| Approach | Pros | Cons | Best For |
-|----------|------|------|----------|
-| **Docker** | Isolated, reproducible, matches production | Slower startup, requires Docker | CI/CD, teams |
-| **Local Test DB** | Faster, simpler setup | Can pollute, less isolation | Solo dev, quick iteration |
-| **In-Memory (sqlite)** | Fastest, no setup | Different SQL dialect, unreliable | Not recommended for Postgres |
-| **Database per worker** | True parallelization | Complex setup, resource intensive | Large test suites |
+| Approach                | Pros                                       | Cons                              | Best For                     |
+| ----------------------- | ------------------------------------------ | --------------------------------- | ---------------------------- |
+| **Docker**              | Isolated, reproducible, matches production | Slower startup, requires Docker   | CI/CD, teams                 |
+| **Local Test DB**       | Faster, simpler setup                      | Can pollute, less isolation       | Solo dev, quick iteration    |
+| **In-Memory (sqlite)**  | Fastest, no setup                          | Different SQL dialect, unreliable | Not recommended for Postgres |
+| **Database per worker** | True parallelization                       | Complex setup, resource intensive | Large test suites            |
 
 **Recommendation:**
+
 1. **Development**: Local PostgreSQL with separate test database
 2. **CI/CD**: Docker containers for full isolation
 3. **Future**: Database per worker when test suite grows large
@@ -609,6 +626,7 @@ apps/backend/
 ```
 
 **Rationale:**
+
 - **Clear separation**: Test code separate from production code
 - **Easy maintenance**: All tests in one location, easier to manage and configure
 - **Consistent structure**: Mirrors source structure for easy navigation
@@ -669,6 +687,7 @@ describe('Customer Onboarding E2E', () => {
 ### Naming Conventions (2025 Standards)
 
 **File Naming:**
+
 - **Unit tests**: `*.spec.ts` (in `tests/unit/` directory)
 - **Integration tests**: `*.integration.spec.ts` (in `tests/integration/` directory)
 - **API tests**: `*.api.spec.ts` (in `tests/api/` directory)
@@ -734,22 +753,27 @@ it('should create account with default balance of 0', () => {});
 ### Assertion Libraries
 
 **1. Built-in Vitest Assertions (Recommended)**
+
 - Compatible with Jest API
 - Zero additional dependencies
 - All standard assertions included
 
 **2. AssertiveTS (For Advanced Type Safety - Optional)**
+
 ```bash
 pnpm add -D @assertive-ts/core
 ```
+
 - Fluent, type-safe assertions
 - Framework agnostic
 - Better TypeScript inference
 
 **3. Earl (Modern Alternative - Optional)**
+
 ```bash
 pnpm add -D earl
 ```
+
 - Type-safe validators
 - Zod integration
 - Built-in snapshot support
@@ -759,21 +783,25 @@ pnpm add -D earl
 ### HTTP Request Testing
 
 **1. Supertest (Industry Standard - Recommended)**
+
 ```bash
 pnpm add -D supertest @types/supertest
 ```
 
 **Pros:**
+
 - Mature, stable, widely used
 - Excellent Express integration
 - Rich ecosystem
 
 **2. supertest-fetch (Modern Alternative)**
+
 ```bash
 pnpm add -D supertest-fetch
 ```
 
 **Pros:**
+
 - Native fetch API
 - TypeScript-first
 - Modern promise-based API
@@ -798,7 +826,7 @@ export const createAccountFixture = (overrides = {}) => ({
   accountType: 'SAVINGS',
   currency: 'USD',
   balance: faker.finance.amount(0, 10000, 2),
-  ...overrides
+  ...overrides,
 });
 ```
 
@@ -825,26 +853,26 @@ export default defineConfig({
         '**/*.spec.ts',
         '**/*.test.ts',
         '**/types/',
-        '**/__tests__/'
+        '**/__tests__/',
       ],
       thresholds: {
         lines: 80,
         functions: 80,
         branches: 75,
-        statements: 80
-      }
-    }
-  }
+        statements: 80,
+      },
+    },
+  },
 });
 ```
 
 ### Prisma-Specific Testing Utilities
 
-| Library | Purpose | Recommendation |
-|---------|---------|----------------|
-| `vitest-mock-extended` | Mocking Prisma Client | Essential |
-| `prisma-mock-vitest` | In-memory Prisma mock | Optional |
-| `@faker-js/faker` | Realistic test data | Recommended |
+| Library                | Purpose               | Recommendation |
+| ---------------------- | --------------------- | -------------- |
+| `vitest-mock-extended` | Mocking Prisma Client | Essential      |
+| `prisma-mock-vitest`   | In-memory Prisma mock | Optional       |
+| `@faker-js/faker`      | Realistic test data   | Recommended    |
 
 ---
 
@@ -865,29 +893,17 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['./tests/setup/vitest.setup.ts'],
     include: ['tests/unit/**/*.spec.ts'],
-    exclude: [
-      'node_modules',
-      'dist',
-      'tests/integration/**',
-      'tests/api/**',
-      'tests/e2e/**'
-    ],
+    exclude: ['node_modules', 'dist', 'tests/integration/**', 'tests/api/**', 'tests/e2e/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       include: ['src/**/*.ts'],
-      exclude: [
-        'node_modules/',
-        'dist/',
-        'tests/**',
-        'src/**/*.d.ts',
-        'src/types/**'
-      ]
+      exclude: ['node_modules/', 'dist/', 'tests/**', 'src/**/*.d.ts', 'src/types/**'],
     },
     mockReset: true,
     restoreMocks: true,
-    clearMocks: true
-  }
+    clearMocks: true,
+  },
 });
 ```
 
@@ -908,12 +924,12 @@ export default defineConfig({
     pool: 'forks', // Use separate processes for integration tests
     poolOptions: {
       forks: {
-        singleFork: false
-      }
+        singleFork: false,
+      },
     },
     testTimeout: 30000, // Longer timeout for DB operations
-    hookTimeout: 30000
-  }
+    hookTimeout: 30000,
+  },
 });
 ```
 
@@ -970,9 +986,9 @@ import { PrismaClient } from '@prisma/client';
 export const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: process.env.DATABASE_URL || 'postgresql://testuser:testpass@localhost:5433/fintech_test'
-    }
-  }
+      url: process.env.DATABASE_URL || 'postgresql://testuser:testpass@localhost:5433/fintech_test',
+    },
+  },
 });
 
 // Clean database before each test
@@ -981,7 +997,7 @@ beforeEach(async () => {
     prisma.transaction.deleteMany(),
     prisma.account.deleteMany(),
     prisma.customer.deleteMany(),
-    prisma.user.deleteMany()
+    prisma.user.deleteMany(),
   ]);
 });
 
@@ -1007,7 +1023,7 @@ export async function setup() {
   await execAsync('docker-compose -f docker-compose.test.yml up -d');
 
   // Wait for database
-  await new Promise(resolve => setTimeout(resolve, 5000));
+  await new Promise((resolve) => setTimeout(resolve, 5000));
 
   console.log('Running migrations...');
   await execAsync('dotenv -e .env.test -- prisma migrate deploy');
@@ -1026,6 +1042,7 @@ export async function teardown() {
 **Test Isolation Strategies:**
 
 **1. Transaction Rollback (Fastest)**
+
 ```typescript
 beforeEach(async () => {
   await prisma.$executeRaw`BEGIN`;
@@ -1040,6 +1057,7 @@ afterEach(async () => {
 **Cons**: Some Prisma features don't work in transactions
 
 **2. Table Truncation (Recommended)**
+
 ```typescript
 beforeEach(async () => {
   const tables = ['Transaction', 'Account', 'Customer'];
@@ -1054,6 +1072,7 @@ beforeEach(async () => {
 **Cons**: Slightly slower than transactions
 
 **3. Database Per Test (Most Isolated)**
+
 ```typescript
 beforeEach(async () => {
   const dbName = `test_${Date.now()}`;
@@ -1082,13 +1101,13 @@ export default defineConfig({
       threads: {
         singleThread: false,
         minThreads: 1,
-        maxThreads: 4 // Adjust based on CPU cores
-      }
+        maxThreads: 4, // Adjust based on CPU cores
+      },
     },
     isolate: true,
     fileParallelism: true,
-    globals: false // Don't use global APIs to avoid conflicts
-  }
+    globals: false, // Don't use global APIs to avoid conflicts
+  },
 });
 ```
 
@@ -1106,6 +1125,7 @@ process.env.DATABASE_URL = `postgresql://user:pass@localhost:5432/fintech_test?s
 ```
 
 **Best Practices:**
+
 1. **Unit tests**: Fully parallel (no shared state)
 2. **Integration tests**: Limited parallelism (database constraints)
 3. **E2E tests**: Sequential (shared resources)
@@ -1119,6 +1139,7 @@ process.env.DATABASE_URL = `postgresql://user:pass@localhost:5432/fintech_test?s
 **Golden Rules:**
 
 **1. No Shared Mutable State**
+
 ```typescript
 // BAD: Shared state across tests
 let sharedAccount: Account;
@@ -1144,6 +1165,7 @@ it('test 2', () => {
 ```
 
 **2. Use beforeEach for Setup**
+
 ```typescript
 describe('AccountService', () => {
   let service: AccountService;
@@ -1154,12 +1176,17 @@ describe('AccountService', () => {
     service = new AccountService(mockRepository);
   });
 
-  it('test 1', () => { /* Uses fresh service */ });
-  it('test 2', () => { /* Uses fresh service */ });
+  it('test 1', () => {
+    /* Uses fresh service */
+  });
+  it('test 2', () => {
+    /* Uses fresh service */
+  });
 });
 ```
 
 **3. Clean Database Between Tests**
+
 ```typescript
 beforeEach(async () => {
   await cleanDatabase(prisma);
@@ -1167,6 +1194,7 @@ beforeEach(async () => {
 ```
 
 **4. Deterministic Test Data**
+
 ```typescript
 // BAD: Random data can cause flaky tests
 const accountNumber = Math.random().toString();
@@ -1179,11 +1207,16 @@ faker.seed(123);
 ```
 
 **5. Avoid Test Dependencies**
+
 ```typescript
 // BAD: Tests depend on execution order
 describe('Account lifecycle', () => {
-  it('creates account', () => { /* Sets global accountId */ });
-  it('updates account', () => { /* Uses global accountId */ });
+  it('creates account', () => {
+    /* Sets global accountId */
+  });
+  it('updates account', () => {
+    /* Uses global accountId */
+  });
 });
 
 // GOOD: Each test sets up its own context
@@ -1204,13 +1237,15 @@ describe('Account lifecycle', () => {
 ### Performance Optimization
 
 **1. Mock External Dependencies in Unit Tests**
+
 ```typescript
 vi.mock('@/shared/database', () => ({
-  prisma: mockDeep<PrismaClient>()
+  prisma: mockDeep<PrismaClient>(),
 }));
 ```
 
 **2. Use Transaction Rollback for Fast Cleanup**
+
 ```typescript
 beforeEach(async () => {
   await prisma.$executeRaw`BEGIN`;
@@ -1222,27 +1257,29 @@ afterEach(async () => {
 ```
 
 **3. Parallel Execution**
+
 ```typescript
 export default defineConfig({
   test: {
     pool: 'threads',
     poolOptions: {
       threads: {
-        maxThreads: Math.floor(os.cpus().length / 2)
-      }
-    }
-  }
+        maxThreads: Math.floor(os.cpus().length / 2),
+      },
+    },
+  },
 });
 ```
 
 **4. Use Fixtures/Factories**
+
 ```typescript
 export const accountFixture = (overrides = {}) => ({
   accountNumber: 'ACC1234567890',
   accountType: 'SAVINGS',
   currency: 'USD',
   balance: 0,
-  ...overrides
+  ...overrides,
 });
 
 it('should validate account', () => {
@@ -1252,11 +1289,12 @@ it('should validate account', () => {
 ```
 
 **5. Minimize Database Queries**
+
 ```typescript
 // BAD: Multiple queries
 const customer = await prisma.customer.create({ data: customerData });
 const account = await prisma.account.create({
-  data: { ...accountData, customerId: customer.id }
+  data: { ...accountData, customerId: customer.id },
 });
 
 // GOOD: Single nested create
@@ -1264,14 +1302,15 @@ const customer = await prisma.customer.create({
   data: {
     ...customerData,
     accounts: {
-      create: accountData
-    }
+      create: accountData,
+    },
   },
-  include: { accounts: true }
+  include: { accounts: true },
 });
 ```
 
 **6. Selective Test Execution**
+
 ```json
 {
   "scripts": {
@@ -1437,7 +1476,7 @@ it('should return correctly typed account', async () => {
   // Runtime assertion
   expect(account).toMatchObject({
     id: expect.any(String),
-    accountNumber: expect.any(String)
+    accountNumber: expect.any(String),
   });
 });
 ```
@@ -1449,7 +1488,7 @@ export const VALID_ACCOUNT = {
   accountNumber: 'ACC1234567890',
   accountType: 'SAVINGS',
   currency: 'USD',
-  balance: 0
+  balance: 0,
 } as const;
 
 // TypeScript infers exact types
@@ -1475,7 +1514,7 @@ import { z } from 'zod';
 const createAccountSchema = z.object({
   customerId: z.string().uuid(),
   accountType: z.enum(['SAVINGS', 'CHECKING']),
-  currency: z.string().length(3)
+  currency: z.string().length(3),
 });
 
 type CreateAccountInput = z.infer<typeof createAccountSchema>;
@@ -1484,7 +1523,7 @@ it('should validate input', () => {
   const input: CreateAccountInput = {
     customerId: '123e4567-e89b-12d3-a456-426614174000',
     accountType: 'SAVINGS',
-    currency: 'USD'
+    currency: 'USD',
   };
 
   const result = createAccountSchema.safeParse(input);
@@ -1503,9 +1542,7 @@ class AccountNotFoundError extends Error {
 }
 
 it('should throw AccountNotFoundError', async () => {
-  await expect(() =>
-    service.findAccount('invalid-id')
-  ).rejects.toThrow(AccountNotFoundError);
+  await expect(() => service.findAccount('invalid-id')).rejects.toThrow(AccountNotFoundError);
 
   // Or with type assertion
   try {
@@ -1532,6 +1569,7 @@ pnpm add -D vitest @vitest/ui @vitest/coverage-v8 vitest-mock-extended supertest
 ```
 
 **2. Create Configuration Files**
+
 - `vitest.config.ts` (unit tests)
 - `vitest.config.integration.ts` (integration tests)
 - `docker-compose.test.yml` (test database)
@@ -1584,16 +1622,19 @@ apps/backend/
 ### Phase 2: Write First Tests (Week 2)
 
 **1. Start with Simple Unit Tests**
+
 - Test utility functions
 - Test validation schemas
 - Test middleware
 
 **2. Add Controller Tests**
+
 - Mock service layer
 - Test request/response handling
 - Test error cases
 
 **3. Add Service Tests**
+
 - Mock repository layer
 - Test business logic
 - Test edge cases
@@ -1601,16 +1642,19 @@ apps/backend/
 ### Phase 3: Integration Tests (Week 3)
 
 **1. Setup Test Database**
+
 - Docker Compose configuration
 - Migration strategy
 - Seed data utilities
 
 **2. Write First Integration Test**
+
 - Test complete API endpoint
 - Verify database changes
 - Test error scenarios
 
 **3. Add Repository Tests**
+
 - Test Prisma queries
 - Test data relationships
 - Test transactions
@@ -1618,6 +1662,7 @@ apps/backend/
 ### Phase 4: CI/CD Integration (Week 4)
 
 **1. Setup GitHub Actions**
+
 - Unit test workflow
 - Integration test workflow
 - Coverage reporting
@@ -1637,6 +1682,7 @@ pnpm add -D husky lint-staged
 ```
 
 **3. Documentation**
+
 - Testing guidelines
 - How to run tests
 - How to write tests
@@ -1671,6 +1717,7 @@ pnpm test:ui           # Run tests with interactive UI
 ## Summary of Recommendations
 
 ### Framework & Tools
+
 - **Testing Framework**: Vitest ⭐
 - **HTTP Testing**: Supertest
 - **Mocking**: vitest-mock-extended
@@ -1679,6 +1726,7 @@ pnpm test:ui           # Run tests with interactive UI
 - **Assertion**: Vitest built-in (Jest-compatible)
 
 ### Testing Strategy (2025 Modern Approach)
+
 - **Unit Tests**: Mock all external dependencies, located in `tests/unit/` (40-50%)
 - **Integration Tests**: Real dependencies, test component interactions in `tests/integration/` (20-30%)
 - **API Tests**: Single endpoint through full stack with real database in `tests/api/` (20-30%)
@@ -1687,12 +1735,14 @@ pnpm test:ui           # Run tests with interactive UI
 - **Parallel Execution**: Unit tests fully parallel, integration tests limited parallelism
 
 ### Key Distinctions to Remember
+
 - **API Test ≠ E2E Test**: API tests validate single endpoints; E2E tests validate workflows
 - **Integration Test**: Can mean component interaction OR single API endpoint (terminology varies)
 - **Backend E2E**: Workflow testing via HTTP (no browser/UI needed)
 - **Subcutaneous Testing**: Testing just below the UI layer (REST API level)
 
 ### Project Structure
+
 - **All tests centralized**: Under `apps/backend/tests/` directory
 - **Unit tests**: `tests/unit/` mirroring source structure (`*.spec.ts`)
 - **Integration tests**: `tests/integration/` (`*.integration.spec.ts`)
@@ -1702,12 +1752,14 @@ pnpm test:ui           # Run tests with interactive UI
 - **Naming**: Clear distinction between test types with explicit directories
 
 ### CI/CD
+
 - **GitHub Actions**: Separate jobs for unit, integration, and E2E tests
 - **Database**: PostgreSQL service for integration tests
 - **Caching**: pnpm dependencies
 - **Coverage**: Upload to Codecov
 
 ### Best Practices 2025
+
 - Test isolation with clean database state
 - Type-safe tests leveraging TypeScript
 - Fast feedback with parallel execution
@@ -1719,12 +1771,14 @@ pnpm test:ui           # Run tests with interactive UI
 ## Additional Resources
 
 ### Industry Standards & References
+
 - **Martin Fowler**: [The Practical Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html)
 - **Kent C. Dodds**: [Static vs Unit vs Integration vs E2E Tests](https://kentcdodds.com/blog/static-vs-unit-vs-integration-vs-e2e-tests)
 - **Testing Trophy**: Alternative to pyramid for frontend-heavy apps
 - **Subcutaneous Testing**: Testing below the UI (API level) for backend apps
 
 ### Modern Testing Tools (2025)
+
 - **Vitest**: Modern, fast test runner with native ESM support
 - **Supertest**: Industry standard for HTTP endpoint testing
 - **Playwright**: For browser-based E2E testing (if needed)
@@ -1732,6 +1786,7 @@ pnpm test:ui           # Run tests with interactive UI
 - **vitest-mock-extended**: Type-safe mocking for TypeScript
 
 ### Key Takeaways
+
 1. **Terminology varies**: "Integration test" means different things to different teams
 2. **API ≠ E2E**: Single endpoint tests are NOT the same as workflow tests
 3. **Backend E2E**: Focuses on API workflows, not browser automation

@@ -585,18 +585,19 @@ model PaymentExecution {
 > **Challenge**: How do you ensure a payment runs **exactly once** even with multiple backend servers?
 
 **Problems**:
+
 - Multiple instances of your app running
 - Server crashes mid-execution
 - Clock skew between servers
 
 **Solutions**:
 
-| Solution | Implementation | Purpose |
-|----------|---------------|----------|
-| **Distributed Lock** | Redis lock with TTL or Postgres advisory locks | Only one instance processes each job |
-| **Job Queue** | BullMQ with unique job IDs | Guaranteed execution, auto-retry |
-| **Idempotency Key** | Use `scheduleId + executionDate` as key | Prevent duplicate charges |
-| **Job Status Tracking** | `ScheduledPayment.lastRunAt`, `nextRunAt` | Track execution history |
+| Solution                | Implementation                                 | Purpose                              |
+| ----------------------- | ---------------------------------------------- | ------------------------------------ |
+| **Distributed Lock**    | Redis lock with TTL or Postgres advisory locks | Only one instance processes each job |
+| **Job Queue**           | BullMQ with unique job IDs                     | Guaranteed execution, auto-retry     |
+| **Idempotency Key**     | Use `scheduleId + executionDate` as key        | Prevent duplicate charges            |
+| **Job Status Tracking** | `ScheduledPayment.lastRunAt`, `nextRunAt`      | Track execution history              |
 
 ---
 
@@ -605,18 +606,19 @@ model PaymentExecution {
 > **Challenge**: What happens when a recurring payment fails? When do you give up?
 
 **Problems**:
+
 - Insufficient funds (temporary vs permanent failure)
 - Network errors vs business logic errors
 - How many retries before canceling subscription?
 
 **Solutions**:
 
-| Solution | Implementation | Purpose |
-|----------|---------------|---------|
-| **Retry Strategy** | 3 attempts: immediate, +1 hour, +24 hours | Handle temporary failures |
-| **Failure Classification** | Retryable vs Non-retryable errors | Different handling strategies |
-| **Grace Period** | Continue service for 3 days during retries | Better UX |
-| **Notification System** | Email on each failure, final warning before cancel | Customer communication |
+| Solution                   | Implementation                                     | Purpose                       |
+| -------------------------- | -------------------------------------------------- | ----------------------------- |
+| **Retry Strategy**         | 3 attempts: immediate, +1 hour, +24 hours          | Handle temporary failures     |
+| **Failure Classification** | Retryable vs Non-retryable errors                  | Different handling strategies |
+| **Grace Period**           | Continue service for 3 days during retries         | Better UX                     |
+| **Notification System**    | Email on each failure, final warning before cancel | Customer communication        |
 
 ---
 
@@ -688,15 +690,15 @@ async function processScheduledPayments() {
   const duePayments = await prisma.scheduledPayment.findMany({
     where: {
       nextRunAt: { lte: new Date() },
-      status: 'ACTIVE'
+      status: 'ACTIVE',
     },
-    take: 100  // Batch processing
+    take: 100, // Batch processing
   });
 
   for (const payment of duePayments) {
     // Acquire distributed lock
     const lock = await acquireLock(`payment:${payment.id}`);
-    if (!lock) continue;  // Another instance is processing
+    if (!lock) continue; // Another instance is processing
 
     try {
       await executePayment(payment);
@@ -715,7 +717,7 @@ async function executePayment(payment: ScheduledPayment) {
       fromAccountId: payment.accountId,
       amount: payment.amount,
       idempotencyKey,
-      description: payment.description
+      description: payment.description,
     });
 
     // Record success
@@ -725,8 +727,8 @@ async function executePayment(payment: ScheduledPayment) {
         transactionId: transaction.id,
         executionDate: payment.nextRunAt,
         status: 'SUCCESS',
-        attemptNumber: 1
-      }
+        attemptNumber: 1,
+      },
     });
 
     // Schedule next run
@@ -735,17 +737,16 @@ async function executePayment(payment: ScheduledPayment) {
       data: {
         nextRunAt: calculateNextRun(payment),
         lastRunAt: new Date(),
-        failureCount: 0
-      }
+        failureCount: 0,
+      },
     });
-
   } catch (error) {
     await handleFailure(payment, error);
   }
 }
 
 async function handleFailure(payment: ScheduledPayment, error: Error) {
-  const isRetryable = classifyError(error);  // Network error vs NSF
+  const isRetryable = classifyError(error); // Network error vs NSF
 
   if (!isRetryable || payment.failureCount >= 3) {
     // Suspend subscription
@@ -753,16 +754,15 @@ async function handleFailure(payment: ScheduledPayment, error: Error) {
       where: { id: payment.id },
       data: {
         status: 'SUSPENDED',
-        lastFailureReason: error.message
-      }
+        lastFailureReason: error.message,
+      },
     });
 
     // Send notification
     await notificationService.sendPaymentFailure(payment);
-
   } else {
     // Schedule retry with exponential backoff
-    const retryDelays = [3600, 86400];  // 1 hour, 24 hours
+    const retryDelays = [3600, 86400]; // 1 hour, 24 hours
     const delay = retryDelays[payment.failureCount] || 0;
 
     await prisma.scheduledPayment.update({
@@ -770,8 +770,8 @@ async function handleFailure(payment: ScheduledPayment, error: Error) {
       data: {
         nextRunAt: new Date(Date.now() + delay * 1000),
         failureCount: { increment: 1 },
-        lastFailureReason: error.message
-      }
+        lastFailureReason: error.message,
+      },
     });
   }
 
@@ -782,8 +782,8 @@ async function handleFailure(payment: ScheduledPayment, error: Error) {
       executionDate: payment.nextRunAt,
       status: 'FAILED',
       failureReason: error.message,
-      attemptNumber: payment.failureCount + 1
-    }
+      attemptNumber: payment.failureCount + 1,
+    },
   });
 }
 
@@ -810,16 +810,20 @@ function calculateNextRun(payment: ScheduledPayment): Date {
 
 function classifyError(error: Error): boolean {
   // Retryable errors
-  if (error.message.includes('Network') ||
-      error.message.includes('timeout') ||
-      error.message.includes('unavailable')) {
+  if (
+    error.message.includes('Network') ||
+    error.message.includes('timeout') ||
+    error.message.includes('unavailable')
+  ) {
     return true;
   }
 
   // Non-retryable errors
-  if (error.message.includes('Insufficient funds') ||
-      error.message.includes('Account closed') ||
-      error.message.includes('Invalid account')) {
+  if (
+    error.message.includes('Insufficient funds') ||
+    error.message.includes('Account closed') ||
+    error.message.includes('Invalid account')
+  ) {
     return false;
   }
 
@@ -1025,6 +1029,7 @@ model ReconciliationTask {
 > **Challenge**: How do you ensure `Account.balance` matches `SUM(LedgerEntry)` for that account?
 
 **Problems**:
+
 - Concurrent transactions might update balance but fail to create ledger entry
 - Database transaction rollback might leave orphaned records
 - Bugs in code logic
@@ -1040,7 +1045,7 @@ async function reconcileAllAccounts() {
   for (const account of accounts) {
     const ledgerSum = await prisma.ledgerEntry.aggregate({
       where: { accountId: account.id },
-      _sum: { amount: true }  // Sum of all DEBIT - CREDIT
+      _sum: { amount: true }, // Sum of all DEBIT - CREDIT
     });
 
     const calculatedBalance = ledgerSum._sum.amount || 0n;
@@ -1051,7 +1056,7 @@ async function reconcileAllAccounts() {
         accountBalance: account.balance,
         ledgerBalance: calculatedBalance,
         difference: account.balance - calculatedBalance,
-        detectedAt: new Date()
+        detectedAt: new Date(),
       });
 
       // Auto-fix or alert for manual review
@@ -1065,8 +1070,8 @@ async function reconcileAllAccounts() {
       reportDate: new Date(),
       totalAccounts: accounts.length,
       discrepanciesFound: discrepancies.length,
-      discrepancies: discrepancies
-    }
+      discrepancies: discrepancies,
+    },
   });
 
   return discrepancies;
@@ -1081,12 +1086,12 @@ async function reconcileAllAccounts() {
 
 **Checks**:
 
-| Check | Query | Action |
-|-------|-------|--------|
-| **Stuck Pending Transactions** | `WHERE status = 'PENDING' AND createdAt < NOW() - INTERVAL '1 hour'` | Alert operations team |
-| **Orphaned Reservations** | `WHERE status = 'ACTIVE' AND expiresAt < NOW()` | Auto-release |
-| **Missing Ledger Pairs** | Transactions with only DEBIT or only CREDIT entry | Create missing entry or flag |
-| **Balance Drift** | `availableBalance > balance` (impossible state) | Fix or escalate |
+| Check                          | Query                                                                | Action                       |
+| ------------------------------ | -------------------------------------------------------------------- | ---------------------------- |
+| **Stuck Pending Transactions** | `WHERE status = 'PENDING' AND createdAt < NOW() - INTERVAL '1 hour'` | Alert operations team        |
+| **Orphaned Reservations**      | `WHERE status = 'ACTIVE' AND expiresAt < NOW()`                      | Auto-release                 |
+| **Missing Ledger Pairs**       | Transactions with only DEBIT or only CREDIT entry                    | Create missing entry or flag |
+| **Balance Drift**              | `availableBalance > balance` (impossible state)                      | Fix or escalate              |
 
 **Implementation**:
 
@@ -1098,15 +1103,15 @@ async function runIntegrityChecks() {
   const stuckTransactions = await prisma.transaction.findMany({
     where: {
       status: 'PENDING',
-      createdAt: { lt: new Date(Date.now() - 3600000) } // 1 hour ago
-    }
+      createdAt: { lt: new Date(Date.now() - 3600000) }, // 1 hour ago
+    },
   });
 
   for (const tx of stuckTransactions) {
     issues.push({
       type: 'STUCK_PENDING_TRANSACTION',
       transactionId: tx.id,
-      createdAt: tx.createdAt
+      createdAt: tx.createdAt,
     });
   }
 
@@ -1114,41 +1119,41 @@ async function runIntegrityChecks() {
   const orphanedReservations = await prisma.transactionReservation.findMany({
     where: {
       status: 'ACTIVE',
-      expiresAt: { lt: new Date() }
-    }
+      expiresAt: { lt: new Date() },
+    },
   });
 
   // Auto-fix: Release them
   for (const reservation of orphanedReservations) {
     await prisma.transactionReservation.update({
       where: { id: reservation.id },
-      data: { status: 'RELEASED' }
+      data: { status: 'RELEASED' },
     });
 
     await prisma.account.update({
       where: { id: reservation.accountId },
       data: {
-        availableBalance: { increment: reservation.amount }
-      }
+        availableBalance: { increment: reservation.amount },
+      },
     });
   }
 
   // Check 3: Missing ledger pairs
   const transactions = await prisma.transaction.findMany({
     where: { status: 'COMPLETED' },
-    include: { ledgerEntries: true }
+    include: { ledgerEntries: true },
   });
 
   for (const tx of transactions) {
-    const debits = tx.ledgerEntries.filter(e => e.entryType === 'DEBIT');
-    const credits = tx.ledgerEntries.filter(e => e.entryType === 'CREDIT');
+    const debits = tx.ledgerEntries.filter((e) => e.entryType === 'DEBIT');
+    const credits = tx.ledgerEntries.filter((e) => e.entryType === 'CREDIT');
 
     if (debits.length !== credits.length) {
       issues.push({
         type: 'MISSING_LEDGER_PAIR',
         transactionId: tx.id,
         debits: debits.length,
-        credits: credits.length
+        credits: credits.length,
       });
     }
   }
@@ -1156,8 +1161,8 @@ async function runIntegrityChecks() {
   // Check 4: Balance drift
   const driftAccounts = await prisma.account.findMany({
     where: {
-      availableBalance: { gt: prisma.raw('balance') }
-    }
+      availableBalance: { gt: prisma.raw('balance') },
+    },
   });
 
   for (const account of driftAccounts) {
@@ -1165,7 +1170,7 @@ async function runIntegrityChecks() {
       type: 'BALANCE_DRIFT',
       accountId: account.id,
       balance: account.balance,
-      availableBalance: account.availableBalance
+      availableBalance: account.availableBalance,
     });
   }
 
@@ -1206,12 +1211,12 @@ async function generateDailyReport(date: Date) {
   // Transaction metrics
   const transactions = await prisma.transaction.findMany({
     where: {
-      createdAt: { gte: startOfDay, lte: endOfDay }
-    }
+      createdAt: { gte: startOfDay, lte: endOfDay },
+    },
   });
 
-  const successful = transactions.filter(t => t.status === 'COMPLETED');
-  const failed = transactions.filter(t => t.status === 'FAILED');
+  const successful = transactions.filter((t) => t.status === 'COMPLETED');
+  const failed = transactions.filter((t) => t.status === 'FAILED');
 
   const totalVolume = successful.reduce((sum, t) => sum + Number(t.amount), 0);
 
@@ -1219,8 +1224,8 @@ async function generateDailyReport(date: Date) {
   const totalAccounts = await prisma.account.count();
   const newAccounts = await prisma.account.count({
     where: {
-      createdAt: { gte: startOfDay, lte: endOfDay }
-    }
+      createdAt: { gte: startOfDay, lte: endOfDay },
+    },
   });
 
   // Run reconciliation
@@ -1236,7 +1241,7 @@ async function generateDailyReport(date: Date) {
     activeAccounts: totalAccounts,
     newAccountsToday: newAccounts,
     reconciliationStatus: reconciliation.length === 0 ? 'PASS' : 'FAIL',
-    discrepanciesFound: reconciliation.length
+    discrepanciesFound: reconciliation.length,
   };
 
   return report;
@@ -1344,7 +1349,7 @@ cron.schedule('0 2 * * *', async () => {
       subject: `[URGENT] Reconciliation Issues Found`,
       balanceDiscrepancies: balanceReconciliation.length,
       integrityIssues: integrityIssues.length,
-      details: { balanceReconciliation, integrityIssues }
+      details: { balanceReconciliation, integrityIssues },
     });
   }
 
@@ -1467,17 +1472,17 @@ cron.schedule('0 2 * * *', async () => {
 
 ## Comparison Matrix
 
-| Aspect                | Module 1: Transfers                   | Module 2: Accounts                       | Module 3: Recurring Payments              | Module 4: Reconciliation                 |
-| --------------------- | ------------------------------------- | ---------------------------------------- | ---------------------------------------- | ---------------------------------------- |
-| **Primary Challenge** | Race conditions, concurrent writes    | Data integrity, business rules           | Distributed scheduling, retry logic      | Data integrity verification              |
-| **Locking Strategy**  | Optimistic locking + two-phase commit | Database constraints + atomic operations | Distributed locks for job processing     | Read-only analysis (no locks needed)     |
-| **Background Jobs**   | Async transfer processing             | None                                     | Scheduled payment execution              | Daily reconciliation cron                |
-| **Complexity**        | High (distributed systems)            | Medium (state management)                | High (distributed systems)               | Medium (batch processing)                |
-| **Real-time Updates** | Critical (transaction status)         | Important (balance changes)              | Moderate (execution notifications)       | Low (daily reports)                      |
-| **Testing Focus**     | Concurrency, load testing             | Time-based logic, validation             | Job execution, retry logic, time mocking | Aggregation accuracy, edge cases         |
-| **Learning Value**    | Advanced (fintech-specific patterns)  | Intermediate (general patterns)          | Advanced (scheduling, state machines)    | Advanced (production-readiness)          |
-| **User-facing**       | Yes (customer transfers)              | Yes (account creation)                   | Yes (subscription management)            | No (internal operations)                 |
-| **Build Time (BE)**   | 5-6 days                              | 3-4 days                                 | 4-5 days                                 | 3-4 days                                 |
+| Aspect                | Module 1: Transfers                   | Module 2: Accounts                       | Module 3: Recurring Payments             | Module 4: Reconciliation             |
+| --------------------- | ------------------------------------- | ---------------------------------------- | ---------------------------------------- | ------------------------------------ |
+| **Primary Challenge** | Race conditions, concurrent writes    | Data integrity, business rules           | Distributed scheduling, retry logic      | Data integrity verification          |
+| **Locking Strategy**  | Optimistic locking + two-phase commit | Database constraints + atomic operations | Distributed locks for job processing     | Read-only analysis (no locks needed) |
+| **Background Jobs**   | Async transfer processing             | None                                     | Scheduled payment execution              | Daily reconciliation cron            |
+| **Complexity**        | High (distributed systems)            | Medium (state management)                | High (distributed systems)               | Medium (batch processing)            |
+| **Real-time Updates** | Critical (transaction status)         | Important (balance changes)              | Moderate (execution notifications)       | Low (daily reports)                  |
+| **Testing Focus**     | Concurrency, load testing             | Time-based logic, validation             | Job execution, retry logic, time mocking | Aggregation accuracy, edge cases     |
+| **Learning Value**    | Advanced (fintech-specific patterns)  | Intermediate (general patterns)          | Advanced (scheduling, state machines)    | Advanced (production-readiness)      |
+| **User-facing**       | Yes (customer transfers)              | Yes (account creation)                   | Yes (subscription management)            | No (internal operations)             |
+| **Build Time (BE)**   | 5-6 days                              | 3-4 days                                 | 4-5 days                                 | 3-4 days                             |
 
 ---
 
@@ -1556,13 +1561,16 @@ graph TB
 ## Recommended Build Order
 
 ### **Phase 1: Foundation** (8-10 days)
+
 1. ✅ **Module 1: Transfers** - Core functionality with reservations
 2. ✅ **Module 2: Accounts** - Foundation for all other modules
 
 ### **Phase 2: Advanced Features** (4-5 days)
+
 3. 🔄 **Module 3: Recurring Payments** - Most impressive, teaches distributed systems
 
 ### **Phase 3: Production Polish** (3-4 days)
+
 4. 🔍 **Module 4: Reconciliation** - Shows production-readiness and maturity
 
 ---

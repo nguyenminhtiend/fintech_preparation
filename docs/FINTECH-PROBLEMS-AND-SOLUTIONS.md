@@ -7,6 +7,7 @@
 **Current:** `version` field exists in `account.prisma:17`
 
 **Solutions:**
+
 - Optimistic locking: `UPDATE accounts SET balance = X WHERE id = Y AND version = Z`
 - Pessimative locking: `SELECT FOR UPDATE` during critical operations
 - Queue-based: Single-threaded processing per account (Kafka partitioning)
@@ -21,6 +22,7 @@
 **Current:** `idempotencyKey` in `transaction.prisma:9`
 
 **Solutions:**
+
 - Store idempotency responses (24-48h TTL)
 - Add unique constraint: `@@unique([customerId, idempotencyKey])`
 - Use Redis for fast duplicate detection
@@ -35,12 +37,14 @@
 **Current:** Basic `LedgerEntry` model exists
 
 **Solutions:**
+
 - Add constraint: `SUM(debits) = SUM(credits) per transaction`
 - Make ledger immutable (no UPDATE/DELETE)
 - Hourly reconciliation jobs
 - Add `balanceAfter` for audit trail (already exists at `ledger.prisma:10`)
 
 **Missing Table:**
+
 ```prisma
 model DailyReconciliation {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -66,6 +70,7 @@ model DailyReconciliation {
 **Current:** `TransactionReservation` exists in `transaction.prisma:38`
 
 **Missing:**
+
 - Expiry cleanup job for `expiresAt` field
 - Calculate: `availableBalance = balance - SUM(active_reservations)`
 - Transition logic: ACTIVE → CLAIMED/RELEASED
@@ -79,6 +84,7 @@ model DailyReconciliation {
 **Current:** Using `BigInt` (correct approach)
 
 **Best Practices:**
+
 - Store smallest unit (cents, not dollars)
 - Never use DECIMAL/FLOAT
 - Document rounding rules
@@ -93,6 +99,7 @@ model DailyReconciliation {
 **Current:** Basic `kycStatus` and `riskScore` in `customer.prisma:6-7`
 
 **Missing Tables:**
+
 ```prisma
 model KYCDocument {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -118,6 +125,7 @@ model TransactionAlert {
 ```
 
 **Monitoring Rules:**
+
 - Velocity: >5 transactions in 5 minutes
 - Amount: Single transaction >$10K (CTR filing requirement)
 - Daily limit: >$25K cumulative
@@ -131,6 +139,7 @@ model TransactionAlert {
 **Problem:** External providers timeout/fail mid-transaction.
 
 **Missing Tables:**
+
 ```prisma
 model TransactionStateLog {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -158,6 +167,7 @@ model FailedTransaction {
 ```
 
 **Solutions:**
+
 - Saga pattern for distributed transactions
 - Compensation transactions for rollbacks
 - Dead letter queue for failed webhooks
@@ -170,6 +180,7 @@ model FailedTransaction {
 **Current:** Basic `AuditLog` in `audit.prisma`
 
 **Add Fields:**
+
 ```prisma
 model AuditLog {
   // ... existing fields ...
@@ -185,6 +196,7 @@ model AuditLog {
 ```
 
 **Best Practices:**
+
 - Append-only (immutable)
 - 7-year retention for financial records
 - Include correlation IDs
@@ -197,6 +209,7 @@ model AuditLog {
 **Current:** Storing `providerToken` in `payment.prisma:11` (correct)
 
 **Critical Rules:**
+
 - NEVER store full PAN (card number)
 - NEVER store CVV/CVC
 - Only tokenized references from gateway
@@ -208,6 +221,7 @@ model AuditLog {
 ## 10. Fraud Detection
 
 **Missing Tables:**
+
 ```prisma
 model FraudScore {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -222,6 +236,7 @@ model FraudScore {
 ```
 
 **ML Models (2025):**
+
 - Anomaly detection (isolation forests)
 - Graph networks for account linkage
 - Real-time scoring (<100ms latency)
@@ -232,6 +247,7 @@ model FraudScore {
 ## 11. Rate Limiting
 
 **Missing Table:**
+
 ```prisma
 model RateLimit {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -250,6 +266,7 @@ model RateLimit {
 ## 12. Webhook Delivery
 
 **Missing Table:**
+
 ```prisma
 model WebhookEvent {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -358,6 +375,7 @@ model ReconciliationMatch {
 #### 1. **Two-Phase Commit with Compensation (SAGA Pattern)**
 
 **Phase 1: Local Debit (Bank A)**
+
 ```sql
 BEGIN TRANSACTION;
   -- 1. Lock sender account
@@ -387,11 +405,15 @@ COMMIT;
 ```
 
 **Phase 2: Network Submission**
+
 ```typescript
 // Send to payment network (ACH, SWIFT, etc.)
 try {
   const networkResponse = await paymentNetwork.submit({
-    amount, currency, receiverBank, receiverAccount
+    amount,
+    currency,
+    receiverBank,
+    receiverAccount,
   });
 
   await db.externalTransfer.update({
@@ -399,8 +421,8 @@ try {
     data: {
       status: 'SENT',
       networkReferenceId: networkResponse.referenceId,
-      sentToNetworkAt: new Date()
-    }
+      sentToNetworkAt: new Date(),
+    },
   });
 } catch (error) {
   // Compensation: Reverse local debit
@@ -409,6 +431,7 @@ try {
 ```
 
 **Phase 3: Settlement & Reconciliation**
+
 ```typescript
 // Webhook from payment network
 async function handleSettlementNotification(notification) {
@@ -416,14 +439,14 @@ async function handleSettlementNotification(notification) {
     where: { networkReferenceId: notification.refId },
     data: {
       status: 'SETTLED',
-      settledAt: notification.settledAt
-    }
+      settledAt: notification.settledAt,
+    },
   });
 
   // Update transaction status
   await db.transaction.update({
     where: { id: transfer.internalTransactionId },
-    data: { status: 'COMPLETED', completedAt: new Date() }
+    data: { status: 'COMPLETED', completedAt: new Date() },
   });
 }
 ```
@@ -437,7 +460,7 @@ const networkReference = generateIdempotentKey({
   accountId: senderAccount.id,
   timestamp: transaction.createdAt,
   amount: transaction.amount,
-  nonce: transaction.id
+  nonce: transaction.id,
 });
 
 // Payment networks deduplicate by reference ID
@@ -461,7 +484,7 @@ const TRANSFER_STATE_MACHINE = {
 
 async function transitionState(transferId, newStatus) {
   const transfer = await db.externalTransfer.findUnique({
-    where: { id: transferId }
+    where: { id: transferId },
   });
 
   const allowedTransitions = TRANSFER_STATE_MACHINE[transfer.status];
@@ -475,13 +498,13 @@ async function transitionState(transferId, newStatus) {
       transactionId: transfer.internalTransactionId,
       previousStatus: transfer.status,
       newStatus,
-      reason: 'Network notification'
-    }
+      reason: 'Network notification',
+    },
   });
 
   await db.externalTransfer.update({
     where: { id: transferId },
-    data: { status: newStatus }
+    data: { status: newStatus },
   });
 }
 ```
@@ -492,7 +515,7 @@ async function transitionState(transferId, newStatus) {
 async function compensateFailedTransfer(transferId) {
   const transfer = await db.externalTransfer.findUnique({
     where: { id: transferId },
-    include: { internalTransaction: true }
+    include: { internalTransaction: true },
   });
 
   await db.$transaction(async (tx) => {
@@ -502,8 +525,8 @@ async function compensateFailedTransfer(transferId) {
       data: {
         balance: { increment: transfer.amount },
         availableBalance: { increment: transfer.amount },
-        version: { increment: 1 }
-      }
+        version: { increment: 1 },
+      },
     });
 
     // 2. Create compensation ledger entry
@@ -514,20 +537,20 @@ async function compensateFailedTransfer(transferId) {
         entryType: 'CREDIT',
         amount: transfer.amount,
         // Mark as compensation
-        metadata: { type: 'COMPENSATION', originalTxn: transferId }
-      }
+        metadata: { type: 'COMPENSATION', originalTxn: transferId },
+      },
     });
 
     // 3. Update transfer status
     await tx.externalTransfer.update({
       where: { id: transferId },
-      data: { status: 'COMPENSATED' }
+      data: { status: 'COMPENSATED' },
     });
 
     // 4. Update original transaction
     await tx.transaction.update({
       where: { id: transfer.internalTransactionId },
-      data: { status: 'REVERSED' }
+      data: { status: 'REVERSED' },
     });
   });
 }
@@ -544,7 +567,7 @@ async function reconcileExternalTransfers(businessDate: Date) {
   // 2. Match with internal records
   for (const entry of statement.entries) {
     const transfer = await db.externalTransfer.findUnique({
-      where: { networkReferenceId: entry.reference }
+      where: { networkReferenceId: entry.reference },
     });
 
     if (!transfer) {
@@ -555,8 +578,8 @@ async function reconcileExternalTransfers(businessDate: Date) {
           statementAmount: entry.amount,
           statementReference: entry.reference,
           matchStatus: 'UNMATCHED',
-          exceptionReason: 'Missing internal record'
-        }
+          exceptionReason: 'Missing internal record',
+        },
       });
       continue;
     }
@@ -568,8 +591,8 @@ async function reconcileExternalTransfers(businessDate: Date) {
           externalTransferId: transfer.id,
           statementAmount: entry.amount,
           matchStatus: 'EXCEPTION',
-          exceptionReason: `Amount mismatch: ${transfer.amount} vs ${entry.amount}`
-        }
+          exceptionReason: `Amount mismatch: ${transfer.amount} vs ${entry.amount}`,
+        },
       });
       continue;
     }
@@ -581,16 +604,16 @@ async function reconcileExternalTransfers(businessDate: Date) {
         statementAmount: entry.amount,
         statementReference: entry.reference,
         matchStatus: 'MATCHED',
-        matchedAt: new Date()
-      }
+        matchedAt: new Date(),
+      },
     });
 
     await db.externalTransfer.update({
       where: { id: transfer.id },
       data: {
         reconciliationStatus: 'RECONCILED',
-        reconciledAt: new Date()
-      }
+        reconciledAt: new Date(),
+      },
     });
   }
 }
@@ -607,16 +630,14 @@ async function monitorPendingTransfers() {
     where: {
       status: { in: ['SENT', 'ACCEPTED'] },
       sentToNetworkAt: {
-        lt: new Date(Date.now() - TIMEOUT_HOURS * 60 * 60 * 1000)
-      }
-    }
+        lt: new Date(Date.now() - TIMEOUT_HOURS * 60 * 60 * 1000),
+      },
+    },
   });
 
   for (const transfer of stuckTransfers) {
     // Query payment network for status
-    const networkStatus = await paymentNetwork.getStatus(
-      transfer.networkReferenceId
-    );
+    const networkStatus = await paymentNetwork.getStatus(transfer.networkReferenceId);
 
     if (networkStatus === 'SETTLED') {
       await transitionState(transfer.id, 'SETTLED');
@@ -633,18 +654,21 @@ async function monitorPendingTransfers() {
 ### Network-Specific Considerations
 
 **ACH (US Domestic)**
+
 - T+1 to T+3 settlement
 - Returns can happen up to 60 days later
 - Requires NACHA file format
 - Same-day ACH: $1M limit per transaction
 
 **Wire Transfer (Fedwire/SWIFT)**
+
 - Real-time settlement (typically < 1 hour)
 - Irrevocable once sent
 - Higher fees ($15-$50)
 - SWIFT MT103 message format
 
 **SEPA (Europe)**
+
 - T+1 settlement
 - €999,999,999 limit
 - ISO 20022 XML format
@@ -663,18 +687,21 @@ async function monitorPendingTransfers() {
 ## Implementation Priority
 
 ### Phase 1 - Critical (Week 1)
+
 1. Optimistic locking implementation
 2. Idempotency validation middleware
 3. Double-entry reconciliation jobs
 4. Reservation expiry cleanup
 
 ### Phase 2 - High Priority (Week 2-3)
+
 5. KYC document management
 6. Transaction monitoring alerts
 7. Failed transaction retry logic
 8. Fraud scoring system
 
 ### Phase 3 - Compliance (Week 4-6)
+
 9. Enhanced audit logging
 10. Daily reconciliation automation
 11. Rate limiting middleware
