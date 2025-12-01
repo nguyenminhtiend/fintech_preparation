@@ -27,8 +27,8 @@ export function createApp(): Express {
   const { accountRouter, accountRepository } = createAccountModule(db);
   const { transactionRouter } = createTransactionModule(db, accountRepository);
 
-  app.use('/accounts', accountRouter);
-  app.use('/transactions', transactionRouter);
+  app.use('/', accountRouter);
+  app.use('/', transactionRouter);
 
   app.use(notFoundRoute);
 

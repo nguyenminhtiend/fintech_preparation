@@ -9,11 +9,13 @@ import {
   createAccountSchema,
 } from '../schemas/account.schema';
 
+export const BASE_PATH = '/accounts';
+
 export function createRouter(controller: AccountController) {
   const routes = [
     {
       method: 'post' as const,
-      path: '/accounts',
+      path: BASE_PATH,
       tags: ['Accounts'] as const,
       summary: 'Create a new account',
       handler: controller.createAccount,
@@ -25,7 +27,7 @@ export function createRouter(controller: AccountController) {
     },
     {
       method: 'get' as const,
-      path: '/accounts/{id}/balance',
+      path: `${BASE_PATH}/{id}/balance`,
       tags: ['Accounts'] as const,
       summary: 'Get account balance',
       handler: controller.getAccountBalance,

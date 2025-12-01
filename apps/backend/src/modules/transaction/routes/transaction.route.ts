@@ -7,11 +7,13 @@ import {
 } from '../schemas/transaction-history.schema';
 import { transferResponseSchema, transferSchema } from '../schemas/transfer.schema';
 
+export const BASE_PATH = '/transactions';
+
 export function createRouter(controller: TransactionController) {
   const routes = [
     {
       method: 'post' as const,
-      path: '/transfer',
+      path: `${BASE_PATH}/transfer`,
       tags: ['Transactions'] as const,
       summary: 'Transfer funds between accounts',
       handler: controller.transfer,
@@ -24,7 +26,7 @@ export function createRouter(controller: TransactionController) {
     },
     {
       method: 'get' as const,
-      path: '/history',
+      path: `${BASE_PATH}/history`,
       tags: ['Transactions'] as const,
       summary: 'Get transaction history for an account',
       handler: controller.getTransactionHistory,
