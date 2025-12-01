@@ -7,14 +7,14 @@ import {
 } from '../schemas/transaction-history.schema';
 import { transferResponseSchema, transferSchema } from '../schemas/transfer.schema';
 
-export function createTransactionRoutes(controller: TransactionController) {
+export function createRouter(controller: TransactionController) {
   const routes = [
     {
       method: 'post' as const,
       path: '/transfer',
       tags: ['Transactions'] as const,
       summary: 'Transfer funds between accounts',
-      handler: controller.transfer, // ✅ Direct reference - TypeScript validates!
+      handler: controller.transfer,
       request: { body: transferSchema },
       responses: {
         200: { schema: transferResponseSchema, description: 'Transfer completed successfully' },
@@ -27,7 +27,7 @@ export function createTransactionRoutes(controller: TransactionController) {
       path: '/history',
       tags: ['Transactions'] as const,
       summary: 'Get transaction history for an account',
-      handler: controller.getTransactionHistory, // ✅ Direct reference - TypeScript validates!
+      handler: controller.getTransactionHistory,
       request: { query: transactionHistoryQuerySchema },
       responses: {
         200: {

@@ -9,7 +9,7 @@ import {
   createAccountSchema,
 } from '../schemas/account.schema';
 
-export function createAccountRouter(controller: AccountController) {
+export function createRouter(controller: AccountController) {
   const routes = [
     {
       method: 'post' as const,

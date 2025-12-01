@@ -4,7 +4,7 @@ import { type IAccountRepository } from '../account/repositories';
 
 import { TransactionController } from './controllers';
 import { LedgerRepository, TransactionRepository, TransferRepository } from './repositories';
-import { createTransactionRoutes } from './routes';
+import { createRouter } from './routes';
 import { TransactionHistoryService, TransferService } from './services';
 
 export function createTransactionModule(db: Database, accountRepository: IAccountRepository) {
@@ -32,7 +32,7 @@ export function createTransactionModule(db: Database, accountRepository: IAccoun
   );
 
   // Routes
-  const { router: transactionRouter } = createTransactionRoutes(transactionController);
+  const { router: transactionRouter } = createRouter(transactionController);
 
   return {
     transactionRouter,
