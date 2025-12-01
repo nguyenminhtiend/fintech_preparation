@@ -10,8 +10,7 @@ import {
   createAccountSchema,
 } from '../schemas/account.schema';
 
-// OpenAPI route definitions
-export const openApiRoutes = [
+export const routes = [
   {
     method: 'post' as const,
     path: '/accounts',
@@ -43,5 +42,5 @@ export const openApiRoutes = [
 ] as const;
 
 export function createAccountRouter(controller: AccountController): Router {
-  return createRouterFromOpenApi(openApiRoutes, controller);
+  return createRouterFromOpenApi(routes, controller);
 }

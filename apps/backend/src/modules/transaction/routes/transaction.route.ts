@@ -9,8 +9,7 @@ import {
 } from '../schemas/transaction-history.schema';
 import { transferResponseSchema, transferSchema } from '../schemas/transfer.schema';
 
-// OpenAPI route definitions
-export const openApiRoutes = [
+export const routes = [
   {
     method: 'post' as const,
     path: '/transfer',
@@ -43,5 +42,5 @@ export const openApiRoutes = [
 ] as const;
 
 export function createTransactionRoutes(controller: TransactionController): Router {
-  return createRouterFromOpenApi(openApiRoutes, controller);
+  return createRouterFromOpenApi(routes, controller);
 }
