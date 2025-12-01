@@ -30,3 +30,19 @@ export const transactionQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(20).optional(),
   offset: z.coerce.number().int().nonnegative().default(0).optional(),
 });
+
+// Response schema
+export const transferResponseSchema = z.object({
+  transactionId: z.string().uuid(),
+  referenceNumber: z.string(),
+  status: z.string(),
+  amount: z.string(),
+  currency: z.string(),
+  fromAccountId: z.string().uuid(),
+  toAccountId: z.string().uuid(),
+  createdAt: z.string(),
+  completedAt: z.string().nullable(),
+});
+
+// Export response type for controllers
+export type TransferResponse = z.infer<typeof transferResponseSchema>;

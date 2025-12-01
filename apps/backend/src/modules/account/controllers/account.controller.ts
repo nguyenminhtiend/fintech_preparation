@@ -38,7 +38,6 @@ export class AccountController {
       balance: Number(account.balance),
       availableBalance: Number(account.availableBalance),
       currency: account.currency,
-      version: account.version,
       createdAt: account.createdAt,
       updatedAt: account.updatedAt,
     };
@@ -49,7 +48,6 @@ export class AccountController {
       balance: Number(account.balance),
       availableBalance: Number(account.availableBalance),
       currency: account.currency,
-      version: account.version,
     };
   }
 }

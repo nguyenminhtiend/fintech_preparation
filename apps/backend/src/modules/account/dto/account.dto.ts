@@ -10,7 +10,6 @@ export interface AccountResponse {
   balance: number;
   availableBalance: number;
   currency: string;
-  version: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,5 +18,4 @@ export interface BalanceResponse {
   balance: number;
   availableBalance: number;
   currency: string;
-  version: number;
 }
