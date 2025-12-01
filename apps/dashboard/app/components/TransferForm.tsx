@@ -8,8 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 const transferSchema = z.object({
-  fromAccountId: z.string().uuid({ message: 'Please enter a valid UUID' }),
-  toAccountId: z.string().uuid({ message: 'Please enter a valid UUID' }),
+  fromAccountId: z.uuid({ message: 'Please enter a valid UUID' }),
+  toAccountId: z.uuid({ message: 'Please enter a valid UUID' }),
   amount: z
     .string()
     .min(1, { message: 'Amount is required' })

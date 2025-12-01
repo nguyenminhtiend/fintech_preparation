@@ -16,7 +16,7 @@ export function createAccountRouter(controller: AccountController) {
       path: '/accounts',
       tags: ['Accounts'] as const,
       summary: 'Create a new account',
-      handler: controller.createAccount, // ✅ Direct reference - TypeScript validates!
+      handler: controller.createAccount,
       request: { body: createAccountSchema },
       responses: {
         201: { schema: accountResponseSchema, description: 'Account created successfully' },
@@ -28,10 +28,10 @@ export function createAccountRouter(controller: AccountController) {
       path: '/accounts/{id}/balance',
       tags: ['Accounts'] as const,
       summary: 'Get account balance',
-      handler: controller.getAccountBalance, // ✅ Direct reference - TypeScript validates!
+      handler: controller.getAccountBalance,
       request: {
         params: z.object({
-          id: z.string().uuid('Invalid account ID format'),
+          id: z.uuid('Invalid account ID format'),
         }),
       },
       responses: {
@@ -43,7 +43,6 @@ export function createAccountRouter(controller: AccountController) {
 
   const router = createRouterFromOpenApi(routes);
 
-  // Export metadata without handler functions for OpenAPI generation
   const metadata: readonly OpenApiRouteMetadata[] = routes.map(
     ({ handler: _handler, ...route }) => route,
   );

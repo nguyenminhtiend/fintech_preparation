@@ -156,13 +156,13 @@ export const createAccountSchema = z.object({
 
 // Response schema (add this)
 export const accountResponseSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   accountNumber: z.string(),
-  customerId: z.string().uuid(),
+  customerId: z.uuid(),
   currency: z.string(),
   balance: z.number(),
   availableBalance: z.number(),
-  createdAt: z.string().datetime(),
+  createdAt: z.iso.datetime(),
 });
 
 // Export response type for controllers
@@ -467,10 +467,10 @@ pnpm openapi:generate
    });
 
    export const customerResponseSchema = z.object({
-     id: z.string().uuid(),
+     id: z.uuid(),
      name: z.string(),
      email: z.string(),
-     createdAt: z.string().datetime(),
+     createdAt: z.iso.datetime(),
    });
    ```
 

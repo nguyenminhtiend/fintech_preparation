@@ -7,8 +7,8 @@ export const createAccountSchema = z.object({
 
 // Response schemas
 export const accountResponseSchema = z.object({
-  id: z.string().uuid(),
-  customerId: z.string().uuid().nullable(),
+  id: z.uuid(),
+  customerId: z.uuid().nullable(),
   accountNumber: z.string(),
   balance: z.number(),
   availableBalance: z.number(),

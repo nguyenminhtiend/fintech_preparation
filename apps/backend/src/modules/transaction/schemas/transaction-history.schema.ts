@@ -5,7 +5,7 @@ import { z } from 'zod';
 const cursorRegex = /^[\d-:.TZ]+\|[a-f0-9-]{36}$/i;
 
 export const transactionHistoryQuerySchema = z.object({
-  accountId: z.string().uuid('Invalid account ID format'),
+  accountId: z.uuid('Invalid account ID format'),
   limit: z
     .string()
     .optional()
@@ -18,7 +18,7 @@ export type TransactionHistoryQuery = z.infer<typeof transactionHistoryQuerySche
 
 // Response schemas
 export const transactionHistoryItemSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   referenceNumber: z.string(),
   type: z.string(),
   amount: z.string(),

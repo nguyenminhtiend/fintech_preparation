@@ -1512,7 +1512,7 @@ const mockCustomerRepo = createMockRepository<CustomerRepository>();
 import { z } from 'zod';
 
 const createAccountSchema = z.object({
-  customerId: z.string().uuid(),
+  customerId: z.uuid(),
   accountType: z.enum(['SAVINGS', 'CHECKING']),
   currency: z.string().length(3),
 });
