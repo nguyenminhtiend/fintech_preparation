@@ -27,7 +27,8 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "openapi:generate": "tsx src/shared/openapi/generate.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.0.0",
@@ -44,6 +45,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@asteasolutions/zod-to-openapi": "^8.1.0",
     "@faker-js/faker": "^10.1.0",
     "@types/bcrypt": "^5.0.2",
     "@types/cors": "^2.8.17",
@@ -53,6 +55,7 @@
     "@types/supertest": "^6.0.3",
     "@vitest/coverage-v8": "^4.0.13",
     "@vitest/ui": "^4.0.13",
+    "glob": "^13.0.0",
     "prisma": "^7.0.0",
     "supertest": "^7.1.4",
     "tsc-alias": "^1.8.10",
