@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { type Router } from 'express';
 
 import { createRouterFromOpenApi } from '@shared/utils';
 
@@ -43,6 +43,5 @@ export const openApiRoutes = [
 ] as const;
 
 export function createTransactionRoutes(controller: TransactionController): Router {
-  const router = Router();
-  return createRouterFromOpenApi(router, openApiRoutes, controller);
+  return createRouterFromOpenApi(openApiRoutes, controller);
 }

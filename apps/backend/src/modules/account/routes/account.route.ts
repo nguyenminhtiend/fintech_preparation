@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { type Router } from 'express';
 import { z } from 'zod';
 
 import { createRouterFromOpenApi } from '@shared/utils';
@@ -43,6 +43,5 @@ export const openApiRoutes = [
 ] as const;
 
 export function createAccountRouter(controller: AccountController): Router {
-  const router = Router();
-  return createRouterFromOpenApi(router, openApiRoutes, controller);
+  return createRouterFromOpenApi(openApiRoutes, controller);
 }
