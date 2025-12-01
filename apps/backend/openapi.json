@@ -14,5 +14,1039 @@
     "schemas": {},
     "parameters": {}
   },
-  "paths": {}
+  "paths": {
+    "/transfer": {
+      "post": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Transfer funds between accounts",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fromAccountId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "toAccountId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "amount": {
+                    "type": "string",
+                    "pattern": "^\\d+$"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 3,
+                    "pattern": "^[A-Z]{3}$"
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "fromAccountId",
+                  "toAccountId",
+                  "amount",
+                  "currency",
+                  "idempotencyKey"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "schema": {
+              "~standard": {
+                "vendor": "zod",
+                "version": 1
+              },
+              "def": {
+                "type": "object",
+                "shape": {
+                  "transactionId": {
+                    "~standard": {
+                      "vendor": "zod",
+                      "version": 1
+                    },
+                    "def": {
+                      "type": "string",
+                      "format": "uuid",
+                      "check": "string_format",
+                      "abort": false,
+                      "pattern": {}
+                    },
+                    "type": "string",
+                    "format": "uuid",
+                    "minLength": null,
+                    "maxLength": null
+                  },
+                  "referenceNumber": {
+                    "~standard": {
+                      "vendor": "zod",
+                      "version": 1
+                    },
+                    "def": {
+                      "type": "string"
+                    },
+                    "type": "string",
+                    "format": null,
+                    "minLength": null,
+                    "maxLength": null
+                  },
+                  "status": {
+                    "~standard": {
+                      "vendor": "zod",
+                      "version": 1
+                    },
+                    "def": {
+                      "type": "string"
+                    },
+                    "type": "string",
+                    "format": null,
+                    "minLength": null,
+                    "maxLength": null
+                  },
+                  "amount": {
+                    "~standard": {
+                      "vendor": "zod",
+                      "version": 1
+                    },
+                    "def": {
+                      "type": "string"
+                    },
+                    "type": "string",
+                    "format": null,
+                    "minLength": null,
+                    "maxLength": null
+                  },
+                  "currency": {
+                    "~standard": {
+                      "vendor": "zod",
+                      "version": 1
+                    },
+                    "def": {
+                      "type": "string"
+                    },
+                    "type": "string",
+                    "format": null,
+                    "minLength": null,
+                    "maxLength": null
+                  },
+                  "fromAccountId": {
+                    "~standard": {
+                      "vendor": "zod",
+                      "version": 1
+                    },
+                    "def": {
+                      "type": "string",
+                      "format": "uuid",
+                      "check": "string_format",
+                      "abort": false,
+                      "pattern": {}
+                    },
+                    "type": "string",
+                    "format": "uuid",
+                    "minLength": null,
+                    "maxLength": null
+                  },
+                  "toAccountId": {
+                    "~standard": {
+                      "vendor": "zod",
+                      "version": 1
+                    },
+                    "def": {
+                      "type": "string",
+                      "format": "uuid",
+                      "check": "string_format",
+                      "abort": false,
+                      "pattern": {}
+                    },
+                    "type": "string",
+                    "format": "uuid",
+                    "minLength": null,
+                    "maxLength": null
+                  },
+                  "createdAt": {
+                    "~standard": {
+                      "vendor": "zod",
+                      "version": 1
+                    },
+                    "def": {
+                      "type": "string"
+                    },
+                    "type": "string",
+                    "format": null,
+                    "minLength": null,
+                    "maxLength": null
+                  },
+                  "completedAt": {
+                    "~standard": {
+                      "vendor": "zod",
+                      "version": 1
+                    },
+                    "def": {
+                      "type": "nullable",
+                      "innerType": {
+                        "~standard": {
+                          "vendor": "zod",
+                          "version": 1
+                        },
+                        "def": {
+                          "type": "string"
+                        },
+                        "type": "string",
+                        "format": null,
+                        "minLength": null,
+                        "maxLength": null
+                      }
+                    },
+                    "type": "nullable"
+                  }
+                }
+              },
+              "type": "object"
+            },
+            "description": "Transfer completed successfully"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "409": {
+            "description": "Conflict - insufficient funds or duplicate request"
+          }
+        }
+      }
+    },
+    "/history": {
+      "get": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Get transaction history for an account",
+        "responses": {
+          "200": {
+            "schema": {
+              "~standard": {
+                "vendor": "zod",
+                "version": 1
+              },
+              "def": {
+                "type": "object",
+                "shape": {
+                  "data": {
+                    "~standard": {
+                      "vendor": "zod",
+                      "version": 1
+                    },
+                    "def": {
+                      "type": "array",
+                      "element": {
+                        "~standard": {
+                          "vendor": "zod",
+                          "version": 1
+                        },
+                        "def": {
+                          "type": "object",
+                          "shape": {
+                            "id": {
+                              "~standard": {
+                                "vendor": "zod",
+                                "version": 1
+                              },
+                              "def": {
+                                "type": "string",
+                                "format": "uuid",
+                                "check": "string_format",
+                                "abort": false,
+                                "pattern": {}
+                              },
+                              "type": "string",
+                              "format": "uuid",
+                              "minLength": null,
+                              "maxLength": null
+                            },
+                            "referenceNumber": {
+                              "~standard": {
+                                "vendor": "zod",
+                                "version": 1
+                              },
+                              "def": {
+                                "type": "string"
+                              },
+                              "type": "string",
+                              "format": null,
+                              "minLength": null,
+                              "maxLength": null
+                            },
+                            "type": {
+                              "~standard": {
+                                "vendor": "zod",
+                                "version": 1
+                              },
+                              "def": {
+                                "type": "string"
+                              },
+                              "type": "string",
+                              "format": null,
+                              "minLength": null,
+                              "maxLength": null
+                            },
+                            "amount": {
+                              "~standard": {
+                                "vendor": "zod",
+                                "version": 1
+                              },
+                              "def": {
+                                "type": "string"
+                              },
+                              "type": "string",
+                              "format": null,
+                              "minLength": null,
+                              "maxLength": null
+                            },
+                            "currency": {
+                              "~standard": {
+                                "vendor": "zod",
+                                "version": 1
+                              },
+                              "def": {
+                                "type": "string"
+                              },
+                              "type": "string",
+                              "format": null,
+                              "minLength": null,
+                              "maxLength": null
+                            },
+                            "balanceAfter": {
+                              "~standard": {
+                                "vendor": "zod",
+                                "version": 1
+                              },
+                              "def": {
+                                "type": "string"
+                              },
+                              "type": "string",
+                              "format": null,
+                              "minLength": null,
+                              "maxLength": null
+                            },
+                            "description": {
+                              "~standard": {
+                                "vendor": "zod",
+                                "version": 1
+                              },
+                              "def": {
+                                "type": "nullable",
+                                "innerType": {
+                                  "~standard": {
+                                    "vendor": "zod",
+                                    "version": 1
+                                  },
+                                  "def": {
+                                    "type": "string"
+                                  },
+                                  "type": "string",
+                                  "format": null,
+                                  "minLength": null,
+                                  "maxLength": null
+                                }
+                              },
+                              "type": "nullable"
+                            },
+                            "createdAt": {
+                              "~standard": {
+                                "vendor": "zod",
+                                "version": 1
+                              },
+                              "def": {
+                                "type": "string"
+                              },
+                              "type": "string",
+                              "format": null,
+                              "minLength": null,
+                              "maxLength": null
+                            },
+                            "counterparty": {
+                              "~standard": {
+                                "vendor": "zod",
+                                "version": 1
+                              },
+                              "def": {
+                                "type": "nullable",
+                                "innerType": {
+                                  "~standard": {
+                                    "vendor": "zod",
+                                    "version": 1
+                                  },
+                                  "def": {
+                                    "type": "object",
+                                    "shape": {
+                                      "accountNumber": {
+                                        "~standard": {
+                                          "vendor": "zod",
+                                          "version": 1
+                                        },
+                                        "def": {
+                                          "type": "nullable",
+                                          "innerType": {
+                                            "~standard": {
+                                              "vendor": "zod",
+                                              "version": 1
+                                            },
+                                            "def": {
+                                              "type": "string"
+                                            },
+                                            "type": "string",
+                                            "format": null,
+                                            "minLength": null,
+                                            "maxLength": null
+                                          }
+                                        },
+                                        "type": "nullable"
+                                      },
+                                      "accountId": {
+                                        "~standard": {
+                                          "vendor": "zod",
+                                          "version": 1
+                                        },
+                                        "def": {
+                                          "type": "nullable",
+                                          "innerType": {
+                                            "~standard": {
+                                              "vendor": "zod",
+                                              "version": 1
+                                            },
+                                            "def": {
+                                              "type": "string"
+                                            },
+                                            "type": "string",
+                                            "format": null,
+                                            "minLength": null,
+                                            "maxLength": null
+                                          }
+                                        },
+                                        "type": "nullable"
+                                      }
+                                    }
+                                  },
+                                  "type": "object"
+                                }
+                              },
+                              "type": "nullable"
+                            }
+                          }
+                        },
+                        "type": "object"
+                      }
+                    },
+                    "type": "array",
+                    "element": {
+                      "~standard": {
+                        "vendor": "zod",
+                        "version": 1
+                      },
+                      "def": {
+                        "type": "object",
+                        "shape": {
+                          "id": {
+                            "~standard": {
+                              "vendor": "zod",
+                              "version": 1
+                            },
+                            "def": {
+                              "type": "string",
+                              "format": "uuid",
+                              "check": "string_format",
+                              "abort": false,
+                              "pattern": {}
+                            },
+                            "type": "string",
+                            "format": "uuid",
+                            "minLength": null,
+                            "maxLength": null
+                          },
+                          "referenceNumber": {
+                            "~standard": {
+                              "vendor": "zod",
+                              "version": 1
+                            },
+                            "def": {
+                              "type": "string"
+                            },
+                            "type": "string",
+                            "format": null,
+                            "minLength": null,
+                            "maxLength": null
+                          },
+                          "type": {
+                            "~standard": {
+                              "vendor": "zod",
+                              "version": 1
+                            },
+                            "def": {
+                              "type": "string"
+                            },
+                            "type": "string",
+                            "format": null,
+                            "minLength": null,
+                            "maxLength": null
+                          },
+                          "amount": {
+                            "~standard": {
+                              "vendor": "zod",
+                              "version": 1
+                            },
+                            "def": {
+                              "type": "string"
+                            },
+                            "type": "string",
+                            "format": null,
+                            "minLength": null,
+                            "maxLength": null
+                          },
+                          "currency": {
+                            "~standard": {
+                              "vendor": "zod",
+                              "version": 1
+                            },
+                            "def": {
+                              "type": "string"
+                            },
+                            "type": "string",
+                            "format": null,
+                            "minLength": null,
+                            "maxLength": null
+                          },
+                          "balanceAfter": {
+                            "~standard": {
+                              "vendor": "zod",
+                              "version": 1
+                            },
+                            "def": {
+                              "type": "string"
+                            },
+                            "type": "string",
+                            "format": null,
+                            "minLength": null,
+                            "maxLength": null
+                          },
+                          "description": {
+                            "~standard": {
+                              "vendor": "zod",
+                              "version": 1
+                            },
+                            "def": {
+                              "type": "nullable",
+                              "innerType": {
+                                "~standard": {
+                                  "vendor": "zod",
+                                  "version": 1
+                                },
+                                "def": {
+                                  "type": "string"
+                                },
+                                "type": "string",
+                                "format": null,
+                                "minLength": null,
+                                "maxLength": null
+                              }
+                            },
+                            "type": "nullable"
+                          },
+                          "createdAt": {
+                            "~standard": {
+                              "vendor": "zod",
+                              "version": 1
+                            },
+                            "def": {
+                              "type": "string"
+                            },
+                            "type": "string",
+                            "format": null,
+                            "minLength": null,
+                            "maxLength": null
+                          },
+                          "counterparty": {
+                            "~standard": {
+                              "vendor": "zod",
+                              "version": 1
+                            },
+                            "def": {
+                              "type": "nullable",
+                              "innerType": {
+                                "~standard": {
+                                  "vendor": "zod",
+                                  "version": 1
+                                },
+                                "def": {
+                                  "type": "object",
+                                  "shape": {
+                                    "accountNumber": {
+                                      "~standard": {
+                                        "vendor": "zod",
+                                        "version": 1
+                                      },
+                                      "def": {
+                                        "type": "nullable",
+                                        "innerType": {
+                                          "~standard": {
+                                            "vendor": "zod",
+                                            "version": 1
+                                          },
+                                          "def": {
+                                            "type": "string"
+                                          },
+                                          "type": "string",
+                                          "format": null,
+                                          "minLength": null,
+                                          "maxLength": null
+                                        }
+                                      },
+                                      "type": "nullable"
+                                    },
+                                    "accountId": {
+                                      "~standard": {
+                                        "vendor": "zod",
+                                        "version": 1
+                                      },
+                                      "def": {
+                                        "type": "nullable",
+                                        "innerType": {
+                                          "~standard": {
+                                            "vendor": "zod",
+                                            "version": 1
+                                          },
+                                          "def": {
+                                            "type": "string"
+                                          },
+                                          "type": "string",
+                                          "format": null,
+                                          "minLength": null,
+                                          "maxLength": null
+                                        }
+                                      },
+                                      "type": "nullable"
+                                    }
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "nullable"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "pagination": {
+                    "~standard": {
+                      "vendor": "zod",
+                      "version": 1
+                    },
+                    "def": {
+                      "type": "object",
+                      "shape": {
+                        "nextCursor": {
+                          "~standard": {
+                            "vendor": "zod",
+                            "version": 1
+                          },
+                          "def": {
+                            "type": "nullable",
+                            "innerType": {
+                              "~standard": {
+                                "vendor": "zod",
+                                "version": 1
+                              },
+                              "def": {
+                                "type": "string"
+                              },
+                              "type": "string",
+                              "format": null,
+                              "minLength": null,
+                              "maxLength": null
+                            }
+                          },
+                          "type": "nullable"
+                        },
+                        "hasMore": {
+                          "~standard": {
+                            "vendor": "zod",
+                            "version": 1
+                          },
+                          "def": {
+                            "type": "boolean"
+                          },
+                          "type": "boolean"
+                        }
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "summary": {
+                    "~standard": {
+                      "vendor": "zod",
+                      "version": 1
+                    },
+                    "def": {
+                      "type": "object",
+                      "shape": {
+                        "currentBalance": {
+                          "~standard": {
+                            "vendor": "zod",
+                            "version": 1
+                          },
+                          "def": {
+                            "type": "string"
+                          },
+                          "type": "string",
+                          "format": null,
+                          "minLength": null,
+                          "maxLength": null
+                        },
+                        "availableBalance": {
+                          "~standard": {
+                            "vendor": "zod",
+                            "version": 1
+                          },
+                          "def": {
+                            "type": "string"
+                          },
+                          "type": "string",
+                          "format": null,
+                          "minLength": null,
+                          "maxLength": null
+                        },
+                        "pendingTransactions": {
+                          "~standard": {
+                            "vendor": "zod",
+                            "version": 1
+                          },
+                          "def": {
+                            "type": "number",
+                            "checks": [
+                              {
+                                "~standard": {
+                                  "vendor": "zod",
+                                  "version": 1
+                                },
+                                "def": {
+                                  "type": "number",
+                                  "check": "number_format",
+                                  "abort": false,
+                                  "format": "safeint"
+                                },
+                                "type": "number",
+                                "minValue": -9007199254740991,
+                                "maxValue": 9007199254740991,
+                                "isInt": true,
+                                "isFinite": true,
+                                "format": "safeint"
+                              }
+                            ]
+                          },
+                          "type": "number",
+                          "minValue": -9007199254740991,
+                          "maxValue": 9007199254740991,
+                          "isInt": true,
+                          "isFinite": true,
+                          "format": "safeint"
+                        },
+                        "totalHolds": {
+                          "~standard": {
+                            "vendor": "zod",
+                            "version": 1
+                          },
+                          "def": {
+                            "type": "string"
+                          },
+                          "type": "string",
+                          "format": null,
+                          "minLength": null,
+                          "maxLength": null
+                        }
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "type": "object"
+            },
+            "description": "Transaction history retrieved successfully"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "404": {
+            "description": "Account not found"
+          }
+        }
+      }
+    },
+    "/accounts": {
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Create a new account",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "customerId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 3
+                  }
+                },
+                "required": [
+                  "customerId",
+                  "currency"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "schema": {
+              "~standard": {
+                "vendor": "zod",
+                "version": 1
+              },
+              "def": {
+                "type": "object",
+                "shape": {
+                  "id": {
+                    "~standard": {
+                      "vendor": "zod",
+                      "version": 1
+                    },
+                    "def": {
+                      "type": "string",
+                      "format": "uuid",
+                      "check": "string_format",
+                      "abort": false,
+                      "pattern": {}
+                    },
+                    "type": "string",
+                    "format": "uuid",
+                    "minLength": null,
+                    "maxLength": null
+                  },
+                  "customerId": {
+                    "~standard": {
+                      "vendor": "zod",
+                      "version": 1
+                    },
+                    "def": {
+                      "type": "nullable",
+                      "innerType": {
+                        "~standard": {
+                          "vendor": "zod",
+                          "version": 1
+                        },
+                        "def": {
+                          "type": "string",
+                          "format": "uuid",
+                          "check": "string_format",
+                          "abort": false,
+                          "pattern": {}
+                        },
+                        "type": "string",
+                        "format": "uuid",
+                        "minLength": null,
+                        "maxLength": null
+                      }
+                    },
+                    "type": "nullable"
+                  },
+                  "accountNumber": {
+                    "~standard": {
+                      "vendor": "zod",
+                      "version": 1
+                    },
+                    "def": {
+                      "type": "string"
+                    },
+                    "type": "string",
+                    "format": null,
+                    "minLength": null,
+                    "maxLength": null
+                  },
+                  "balance": {
+                    "~standard": {
+                      "vendor": "zod",
+                      "version": 1
+                    },
+                    "def": {
+                      "type": "number",
+                      "checks": []
+                    },
+                    "type": "number",
+                    "minValue": null,
+                    "maxValue": null,
+                    "isInt": false,
+                    "isFinite": true,
+                    "format": null
+                  },
+                  "availableBalance": {
+                    "~standard": {
+                      "vendor": "zod",
+                      "version": 1
+                    },
+                    "def": {
+                      "type": "number",
+                      "checks": []
+                    },
+                    "type": "number",
+                    "minValue": null,
+                    "maxValue": null,
+                    "isInt": false,
+                    "isFinite": true,
+                    "format": null
+                  },
+                  "currency": {
+                    "~standard": {
+                      "vendor": "zod",
+                      "version": 1
+                    },
+                    "def": {
+                      "type": "string"
+                    },
+                    "type": "string",
+                    "format": null,
+                    "minLength": null,
+                    "maxLength": null
+                  },
+                  "createdAt": {
+                    "~standard": {
+                      "vendor": "zod",
+                      "version": 1
+                    },
+                    "def": {
+                      "type": "date"
+                    },
+                    "type": "date",
+                    "minDate": null,
+                    "maxDate": null
+                  },
+                  "updatedAt": {
+                    "~standard": {
+                      "vendor": "zod",
+                      "version": 1
+                    },
+                    "def": {
+                      "type": "date"
+                    },
+                    "type": "date",
+                    "minDate": null,
+                    "maxDate": null
+                  }
+                }
+              },
+              "type": "object"
+            },
+            "description": "Account created successfully"
+          },
+          "400": {
+            "description": "Invalid request"
+          }
+        }
+      }
+    },
+    "/accounts/{id}/balance": {
+      "get": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Get account balance",
+        "responses": {
+          "200": {
+            "schema": {
+              "~standard": {
+                "vendor": "zod",
+                "version": 1
+              },
+              "def": {
+                "type": "object",
+                "shape": {
+                  "balance": {
+                    "~standard": {
+                      "vendor": "zod",
+                      "version": 1
+                    },
+                    "def": {
+                      "type": "number",
+                      "checks": []
+                    },
+                    "type": "number",
+                    "minValue": null,
+                    "maxValue": null,
+                    "isInt": false,
+                    "isFinite": true,
+                    "format": null
+                  },
+                  "availableBalance": {
+                    "~standard": {
+                      "vendor": "zod",
+                      "version": 1
+                    },
+                    "def": {
+                      "type": "number",
+                      "checks": []
+                    },
+                    "type": "number",
+                    "minValue": null,
+                    "maxValue": null,
+                    "isInt": false,
+                    "isFinite": true,
+                    "format": null
+                  },
+                  "currency": {
+                    "~standard": {
+                      "vendor": "zod",
+                      "version": 1
+                    },
+                    "def": {
+                      "type": "string"
+                    },
+                    "type": "string",
+                    "format": null,
+                    "minLength": null,
+                    "maxLength": null
+                  }
+                }
+              },
+              "type": "object"
+            },
+            "description": "Account balance retrieved"
+          },
+          "404": {
+            "description": "Account not found"
+          }
+        }
+      }
+    }
+  }
 }

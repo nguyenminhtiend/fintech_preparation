@@ -42,7 +42,6 @@ export function createRouter(controller: TransactionController) {
 
   const router = createRouterFromOpenApi(routes);
 
-  // Export metadata without handler functions for OpenAPI generation
   const metadata: readonly OpenApiRouteMetadata[] = routes.map(
     ({ handler: _handler, ...route }) => route,
   );

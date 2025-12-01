@@ -41,6 +41,19 @@ async function scanRoutes(): Promise<OpenApiRouteMetadata[]> {
 
   const allRoutes: OpenApiRouteMetadata[] = [];
 
+  // Create a mock controller that returns no-op functions for any property access
+  const mockController = new Proxy(
+    {},
+    {
+      get: () => {
+        // Return a no-op function for any controller method
+        return () => {
+          // This function will never be called during metadata extraction
+        };
+      },
+    },
+  );
+
   for (const file of routeFiles) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -48,7 +61,7 @@ async function scanRoutes(): Promise<OpenApiRouteMetadata[]> {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       if (typeof module.createRouter === 'function') {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        const routerConfig = module.createRouter({});
+        const routerConfig = module.createRouter(mockController);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (routerConfig?.metadata && Array.isArray(routerConfig.metadata)) {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
@@ -59,7 +72,6 @@ async function scanRoutes(): Promise<OpenApiRouteMetadata[]> {
       logger.warn({ file, error }, 'Failed to import route file');
     }
   }
-
   return allRoutes;
 }
 
