@@ -1,5 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState } from 'react';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import {
   isRouteErrorResponse,
   Links,
@@ -11,6 +11,7 @@ import {
 
 import type { Route } from './+types/root';
 import { Sidebar } from './components/Sidebar';
+import { queryClient } from './lib/api/query-client';
 
 import './app.css';
 
@@ -46,18 +47,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            staleTime: 1000 * 60,
-            refetchOnWindowFocus: false,
-          },
-        },
-      }),
-  );
-
   return (
     <QueryClientProvider client={queryClient}>
       <div className="grid grid-cols-[256px_1fr] min-h-screen">
@@ -66,6 +55,7 @@ export default function App() {
           <Outlet />
         </main>
       </div>
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
 }

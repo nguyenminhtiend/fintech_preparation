@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useTransactionHistory } from '@/lib/api/hooks';
 
 export function meta(_args: Route.MetaArgs) {
   return [
@@ -22,74 +23,14 @@ export function meta(_args: Route.MetaArgs) {
   ];
 }
 
-interface TransactionHistoryItem {
-  id: string;
-  referenceNumber: string;
-  type: string;
-  amount: string;
-  currency: string;
-  balanceAfter: string;
-  description: string | null;
-  createdAt: string;
-  counterparty: {
-    accountNumber: string | null;
-    accountId: string | null;
-  } | null;
-}
-
-interface TransactionHistoryResponse {
-  data: TransactionHistoryItem[];
-  pagination: {
-    nextCursor: string | null;
-    hasMore: boolean;
-  };
-  summary: {
-    currentBalance: string;
-    availableBalance: string;
-    pendingTransactions: number;
-    totalHolds: string;
-  };
-}
-
 export default function Home() {
   const [accountId, setAccountId] = useState('');
-  const [transactions, setTransactions] = useState<TransactionHistoryItem[]>([]);
-  const [summary, setSummary] = useState<TransactionHistoryResponse['summary'] | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchTransactions = async () => {
-    if (!accountId) {
-      setError('Please enter an account ID');
-      return;
-    }
+  // Use type-safe hook instead of manual fetch
+  const { data, isLoading, error } = useTransactionHistory(accountId, 10);
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const params = new URLSearchParams({ accountId, limit: '10' });
-      const response = await fetch(
-        `http://localhost:3000/api/v1/transactions/history?${params.toString()}`,
-      );
-
-      if (!response.ok) {
-        const errorData = (await response.json()) as { message?: string };
-        throw new Error(errorData.message ?? 'Failed to fetch transactions');
-      }
-
-      const result = (await response.json()) as TransactionHistoryResponse;
-      setTransactions(result.data);
-      setSummary(result.summary);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-      setError(errorMessage);
-      setTransactions([]);
-      setSummary(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const transactions = data?.data ?? [];
+  const summary = data?.summary ?? null;
 
   const formatAmount = (amount: string, currency: string) => {
     const numAmount = parseFloat(amount) / 100;
@@ -132,7 +73,9 @@ export default function Home() {
             </div>
             <Button
               onClick={() => {
-                void fetchTransactions();
+                // Query automatically runs when accountId is set (via enabled: !!accountId)
+                // This button just triggers validation
+                if (!accountId) return;
               }}
               disabled={isLoading || !accountId}
               className="mt-6"
@@ -143,7 +86,7 @@ export default function Home() {
 
           {error && (
             <div className="mt-4 p-4 rounded-lg bg-destructive/10 text-destructive text-sm">
-              {error}
+              {error.message ?? 'Failed to load dashboard'}
             </div>
           )}
         </CardContent>

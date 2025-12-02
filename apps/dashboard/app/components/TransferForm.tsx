@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useTransfer } from '@/lib/api/hooks';
 
 const transferSchema = z.object({
   fromAccountId: z.uuid({ message: 'Please enter a valid UUID' }),
@@ -28,17 +29,14 @@ type TransferFormData = z.infer<typeof transferSchema>;
 interface TransferFormProps {
   onSuccess?: (transactionId: string) => void;
   onError?: (error: string) => void;
-  apiEndpoint?: string;
 }
 
-export function TransferForm({
-  onSuccess,
-  onError,
-  apiEndpoint = 'http://localhost:3000/transactions/transfer',
-}: TransferFormProps) {
+export function TransferForm({ onSuccess, onError }: TransferFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [idempotencyKey, setIdempotencyKey] = useState<string>('');
+
+  const transfer = useTransfer();
 
   const {
     register,
@@ -66,36 +64,18 @@ export function TransferForm({
     setSuccess(null);
 
     try {
-      // Add idempotency key to form data
-      data.idempotencyKey = idempotencyKey;
-
       // Convert amount to string of cents (assuming currency is in dollars)
       const amountInCents = Math.round(parseFloat(data.amount) * 100).toString();
 
-      const response = await fetch(apiEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fromAccountId: data.fromAccountId,
-          toAccountId: data.toAccountId,
-          amount: amountInCents,
-          currency: data.currency.toUpperCase(),
-          description: data.description ?? undefined,
-          idempotencyKey,
-        }),
+      const result = await transfer.mutateAsync({
+        fromAccountId: data.fromAccountId,
+        toAccountId: data.toAccountId,
+        amount: amountInCents,
+        currency: data.currency.toUpperCase(),
+        description: data.description,
+        idempotencyKey,
       });
 
-      if (!response.ok) {
-        const errorData = (await response.json()) as { message?: string };
-        const errorMessage = errorData.message ?? 'Transfer failed';
-        setError(errorMessage);
-        onError?.(errorMessage);
-        throw new Error(errorMessage);
-      }
-
-      const result = (await response.json()) as { transactionId: string; referenceNumber: string };
       const successMessage = `Transfer successful! Transaction ID: ${result.transactionId} | Reference: ${result.referenceNumber}`;
       setSuccess(successMessage);
       onSuccess?.(result.transactionId);
@@ -203,8 +183,8 @@ export function TransferForm({
         <div className="p-4 rounded-lg bg-green-500/10 text-green-700 text-sm">{success}</div>
       )}
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? 'Processing...' : 'Transfer Money'}
+      <Button type="submit" className="w-full" disabled={transfer.isPending || isSubmitting}>
+        {transfer.isPending || isSubmitting ? 'Processing...' : 'Transfer Money'}
       </Button>
     </form>
   );
