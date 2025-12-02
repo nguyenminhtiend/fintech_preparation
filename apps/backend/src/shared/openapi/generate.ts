@@ -16,8 +16,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete';
 
 interface ResponseConfig {
-  schema?: ZodSchema;
   description: string;
+  schema?: ZodSchema;
+  content?: {
+    'application/json': {
+      schema: ZodSchema;
+    };
+  };
 }
 
 interface RouteDefinition {
@@ -87,9 +92,20 @@ async function generate(): Promise<void> {
   routes.forEach((route) => {
     const responses: Record<string, ResponseConfig | { description: string }> = {};
 
-    // Build responses object
+    // Build responses object with content wrappers
     Object.entries(route.responses).forEach(([status, config]) => {
-      responses[status] = config;
+      if ('schema' in config && config.schema) {
+        responses[status] = {
+          description: config.description,
+          content: {
+            'application/json': {
+              schema: config.schema, // Now using .openapi() schemas
+            },
+          },
+        };
+      } else {
+        responses[status] = config;
+      }
     });
 
     registry.registerPath({

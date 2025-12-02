@@ -1,4 +1,7 @@
+import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
+
+extendZodWithOpenApi(z);
 
 export const transferSchema = z
   .object({
@@ -31,18 +34,20 @@ export const transactionQuerySchema = z.object({
   offset: z.coerce.number().int().nonnegative().default(0).optional(),
 });
 
-// Response schema
-export const transferResponseSchema = z.object({
-  transactionId: z.uuid(),
-  referenceNumber: z.string(),
-  status: z.string(),
-  amount: z.string(),
-  currency: z.string(),
-  fromAccountId: z.uuid(),
-  toAccountId: z.uuid(),
-  createdAt: z.string(),
-  completedAt: z.string().nullable(),
-});
+// Response schema with OpenAPI metadata
+export const transferResponseSchema = z
+  .object({
+    transactionId: z.uuid(),
+    referenceNumber: z.string(),
+    status: z.string(),
+    amount: z.string(),
+    currency: z.string(),
+    fromAccountId: z.uuid(),
+    toAccountId: z.uuid(),
+    createdAt: z.string(),
+    completedAt: z.string().nullable(),
+  })
+  .openapi('TransferResponse');
 
 // Export response type for controllers
 export type TransferResponse = z.infer<typeof transferResponseSchema>;
