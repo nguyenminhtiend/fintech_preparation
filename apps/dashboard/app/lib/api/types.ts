@@ -1,84 +1,51 @@
 /**
  * Type definitions for API requests and responses
  *
- * NOTE: These are manually defined as a workaround until openapi-typescript
- * can properly parse Zod-generated OpenAPI schemas. Once tooling compatibility
- * is resolved, these should be auto-generated from the OpenAPI spec.
+ * These types are derived from the auto-generated OpenAPI types in @repo/api-client.
+ * This provides type safety while avoiding duplication.
  *
- * @see apps/backend/openapi.json
+ * @see packages/api-client/src/types/api.d.ts (auto-generated from apps/backend/openapi.json)
  */
 
+import type { components, paths } from '@repo/api-client';
+
+// ============================================================================
 // Transaction History Types
-export interface TransactionHistoryItem {
-  id: string;
-  referenceNumber: string;
-  type: string;
-  amount: string;
-  currency: string;
-  balanceAfter: string;
-  description: string | null;
-  createdAt: string;
-  counterparty: {
-    accountNumber: string | null;
-    accountId: string | null;
-  } | null;
-}
+// ============================================================================
 
-export interface TransactionHistoryResponse {
-  data: TransactionHistoryItem[];
-  pagination: {
-    nextCursor: string | null;
-    hasMore: boolean;
-  };
-  summary: {
-    currentBalance: string;
-    availableBalance: string;
-    pendingTransactions: number;
-    totalHolds: string;
-  };
-}
+export type TransactionHistoryResponse =
+  paths['/transactions/history']['get']['responses'][200]['content']['application/json'];
 
+export type TransactionHistoryItem = TransactionHistoryResponse['data'][number];
+
+// ============================================================================
 // Transfer Types
-export interface TransferRequest {
-  fromAccountId: string;
-  toAccountId: string;
-  amount: string;
-  currency: string;
-  idempotencyKey: string;
-  description?: string;
-}
+// ============================================================================
 
-export interface TransferResponse {
-  transactionId: string;
-  referenceNumber: string;
-  status: string;
-  amount: string;
-  currency: string;
-  fromAccountId: string;
-  toAccountId: string;
-  createdAt: string;
-  completedAt: string | null;
-}
+export type TransferRequest = NonNullable<
+  paths['/transactions/transfer']['post']['requestBody']
+>['content']['application/json'];
 
+export type TransferResponse =
+  paths['/transactions/transfer']['post']['responses'][200]['content']['application/json'];
+
+// ============================================================================
 // Account Types
-export interface CreateAccountRequest {
-  customerId: string;
-  currency: string;
-}
+// ============================================================================
 
-export interface AccountResponse {
-  id: string;
-  accountNumber: string;
-  customerId: string | null;
-  currency: string;
-  balance: number;
-  availableBalance: number;
-  createdAt: string;
-  updatedAt: string;
-}
+export type CreateAccountRequest = NonNullable<
+  paths['/accounts']['post']['requestBody']
+>['content']['application/json'];
 
-export interface BalanceResponse {
-  balance: number;
-  availableBalance: number;
-  currency: string;
-}
+export type AccountResponse =
+  paths['/accounts']['post']['responses'][201]['content']['application/json'];
+
+export type BalanceResponse =
+  paths['/accounts/{id}/balance']['get']['responses'][200]['content']['application/json'];
+
+// ============================================================================
+// Schema Components (if needed)
+// ============================================================================
+
+// Re-export components for direct access to schemas
+export type { components };
