@@ -17,9 +17,7 @@
   "paths": {
     "/transactions/transfer": {
       "post": {
-        "tags": [
-          "Transactions"
-        ],
+        "tags": ["Transactions"],
         "summary": "Transfer funds between accounts",
         "requestBody": {
           "content": {
@@ -54,13 +52,7 @@
                     "maxLength": 500
                   }
                 },
-                "required": [
-                  "fromAccountId",
-                  "toAccountId",
-                  "amount",
-                  "currency",
-                  "idempotencyKey"
-                ]
+                "required": ["fromAccountId", "toAccountId", "amount", "currency", "idempotencyKey"]
               }
             }
           }
@@ -231,9 +223,7 @@
     },
     "/transactions/history": {
       "get": {
-        "tags": [
-          "Transactions"
-        ],
+        "tags": ["Transactions"],
         "summary": "Get transaction history for an account",
         "responses": {
           "200": {
@@ -799,9 +789,7 @@
     },
     "/accounts": {
       "post": {
-        "tags": [
-          "Accounts"
-        ],
+        "tags": ["Accounts"],
         "summary": "Create a new account",
         "requestBody": {
           "content": {
@@ -819,10 +807,7 @@
                     "maxLength": 3
                   }
                 },
-                "required": [
-                  "customerId",
-                  "currency"
-                ]
+                "required": ["customerId", "currency"]
               }
             }
           }
@@ -977,9 +962,7 @@
     },
     "/accounts/{id}/balance": {
       "get": {
-        "tags": [
-          "Accounts"
-        ],
+        "tags": ["Accounts"],
         "summary": "Get account balance",
         "responses": {
           "200": {
