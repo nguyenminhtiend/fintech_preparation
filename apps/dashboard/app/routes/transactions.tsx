@@ -1,5 +1,6 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+
+import type { Route } from './+types/transactions';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,74 +14,22 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useTransactionHistoryInfinite } from '@/lib/api/hooks';
 
-export function meta() {
+export function meta(_args: Route.MetaArgs) {
   return [
     { title: 'Transactions - Dashboard' },
     { name: 'description', content: 'View your transaction history' },
   ];
 }
 
-interface TransactionHistoryItem {
-  id: string;
-  referenceNumber: string;
-  type: string;
-  amount: string;
-  currency: string;
-  balanceAfter: string;
-  description: string | null;
-  createdAt: string;
-  counterparty: {
-    accountNumber: string | null;
-    accountId: string | null;
-  } | null;
-}
-
-interface TransactionHistoryResponse {
-  data: TransactionHistoryItem[];
-  pagination: {
-    nextCursor: string | null;
-    hasMore: boolean;
-  };
-  summary: {
-    currentBalance: string;
-    availableBalance: string;
-    pendingTransactions: number;
-    totalHolds: string;
-  };
-}
-
-const fetchTransactionHistory = async (
-  accountId: string,
-  cursor?: string,
-): Promise<TransactionHistoryResponse> => {
-  const params = new URLSearchParams({ accountId });
-  if (cursor) {
-    params.append('cursor', cursor);
-  }
-
-  const response = await fetch(`http://localhost:3000/transactions/history?${params.toString()}`);
-
-  if (!response.ok) {
-    const errorData = (await response.json()) as { message?: string };
-    throw new Error(errorData.message ?? 'Failed to fetch transactions');
-  }
-
-  return response.json() as Promise<TransactionHistoryResponse>;
-};
-
 export default function Transactions() {
   const [accountId, setAccountId] = useState('');
   const [searchAccountId, setSearchAccountId] = useState('');
 
+  // Use type-safe infinite query hook instead of manual fetch
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, error } =
-    useInfiniteQuery({
-      queryKey: ['transactions', searchAccountId],
-      queryFn: ({ pageParam }) => fetchTransactionHistory(searchAccountId, pageParam),
-      initialPageParam: undefined as string | undefined,
-      getNextPageParam: (lastPage) => lastPage.pagination.nextCursor ?? undefined,
-      enabled: !!searchAccountId,
-    });
+    useTransactionHistoryInfinite(searchAccountId);
 
   const handleSearch = () => {
     setSearchAccountId(accountId);

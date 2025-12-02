@@ -1,4 +1,11 @@
-import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  type UseInfiniteQueryOptions,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseQueryOptions,
+} from '@tanstack/react-query';
 
 import { apiClient } from '../client';
 import { ApiError } from '../errors';
@@ -46,6 +53,62 @@ export function useTransactionHistory(
       // Type narrowing: if no error, data must exist
       return data!;
     },
+    enabled: !!accountId,
+    ...options,
+  });
+}
+
+/**
+ * Fetch transaction history with infinite scroll/cursor-based pagination
+ *
+ * Follows 2025 best practices:
+ * - Cursor-based pagination for efficient data fetching
+ * - Type-safe query keys
+ * - Proper error handling
+ * - Configurable page size
+ *
+ * @param accountId - Account UUID
+ * @param limit - Maximum number of transactions per page (default: 20)
+ * @param options - Additional React Query infinite query options
+ *
+ * @example
+ * const { data, fetchNextPage, hasNextPage } = useTransactionHistoryInfinite(accountId);
+ */
+export function useTransactionHistoryInfinite(
+  accountId: string,
+  limit = 20,
+  options?: Omit<
+    UseInfiniteQueryOptions<TransactionHistoryResponse, ApiError>,
+    'queryKey' | 'queryFn' | 'initialPageParam' | 'getNextPageParam' | 'enabled' | 'select'
+  >,
+) {
+  return useInfiniteQuery<TransactionHistoryResponse, ApiError>({
+    queryKey: [...queryKeys.transactions.history(accountId, limit), 'infinite'],
+    queryFn: async ({ pageParam }) => {
+      const params: { accountId: string; limit?: string; cursor?: string } = {
+        accountId,
+        limit: limit.toString(),
+      };
+
+      if (pageParam) {
+        params.cursor = pageParam as string;
+      }
+
+      const { data, error } = await apiClient.GET('/transactions/history', {
+        params: {
+          // Type assertion needed due to openapi-typescript not parsing Zod schemas correctly
+          query: params as never,
+        },
+      });
+
+      if (error) {
+        throw ApiError.fromResponse(error, 'Failed to fetch transaction history');
+      }
+
+      return data!;
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.pagination.nextCursor ?? undefined,
     enabled: !!accountId,
     ...options,
   });

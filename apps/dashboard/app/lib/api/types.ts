@@ -60,13 +60,25 @@ export interface TransferResponse {
   completedAt: string | null;
 }
 
-// Future: Account Types
+// Account Types
+export interface CreateAccountRequest {
+  customerId: string;
+  currency: string;
+}
+
 export interface AccountResponse {
   id: string;
   accountNumber: string;
-  customerId: string;
+  customerId: string | null;
   currency: string;
   balance: number;
   availableBalance: number;
   createdAt: string;
+  updatedAt: string;
+}
+
+export interface BalanceResponse {
+  balance: number;
+  availableBalance: number;
+  currency: string;
 }
