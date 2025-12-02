@@ -31,20 +31,18 @@ export const transactionQuerySchema = z.object({
   offset: z.coerce.number().int().nonnegative().default(0).optional(),
 });
 
-// Response schema with OpenAPI metadata
-export const transferResponseSchema = z
-  .object({
-    transactionId: z.uuid(),
-    referenceNumber: z.string(),
-    status: z.string(),
-    amount: z.string(),
-    currency: z.string(),
-    fromAccountId: z.uuid(),
-    toAccountId: z.uuid(),
-    createdAt: z.string(),
-    completedAt: z.string().nullable(),
-  })
-  .openapi('TransferResponse');
+// Response schema
+export const transferResponseSchema = z.object({
+  transactionId: z.uuid(),
+  referenceNumber: z.string(),
+  status: z.string(),
+  amount: z.string(),
+  currency: z.string(),
+  fromAccountId: z.uuid(),
+  toAccountId: z.uuid(),
+  createdAt: z.string(),
+  completedAt: z.string().nullable(),
+});
 
 // Export response type for controllers
 export type TransferResponse = z.infer<typeof transferResponseSchema>;

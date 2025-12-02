@@ -91,6 +91,24 @@ async function generate(): Promise<void> {
 
   logger.info({ count: routes.length }, 'Found routes to register');
 
+  // Track registered schemas to avoid duplicates
+  const registeredSchemas = new Map<ZodSchema, ZodSchema>();
+
+  // Helper to wrap schema with .openapi() and track it
+  const wrapWithOpenApi = (schema: ZodSchema, name: string): ZodSchema => {
+    // Check if already wrapped
+    const existing = registeredSchemas.get(schema);
+    if (existing) return existing;
+
+    // Wrap with .openapi() to register as named component
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
+    const wrapped = (schema as any).openapi(name);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    registeredSchemas.set(schema, wrapped);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return wrapped;
+  };
+
   // Register each route with proper request/response schemas
   routes.forEach((route) => {
     const responses: Record<string, ResponseConfig | { description: string }> = {};
@@ -98,11 +116,22 @@ async function generate(): Promise<void> {
     // Build responses object with content wrappers
     Object.entries(route.responses).forEach(([status, config]) => {
       if ('schema' in config && config.schema) {
+        // Generate schema name from route path and method
+        const pathParts = route.path.split('/').filter(Boolean);
+        const lastPart = pathParts[pathParts.length - 1] || 'response';
+        const schemaName =
+          lastPart.charAt(0).toUpperCase() +
+          lastPart.slice(1) +
+          (route.method === 'post' ? 'Response' : 'Response');
+
+        // Wrap schema with .openapi() to create named component
+        const wrappedSchema = wrapWithOpenApi(config.schema, schemaName);
+
         responses[status] = {
           description: config.description,
           content: {
             'application/json': {
-              schema: config.schema, // Now using .openapi() schemas
+              schema: wrappedSchema,
             },
           },
         };

@@ -16,49 +16,41 @@ export const transactionHistoryQuerySchema = z.object({
 
 export type TransactionHistoryQuery = z.infer<typeof transactionHistoryQuerySchema>;
 
-// Response schemas with OpenAPI metadata
-export const transactionHistoryItemSchema = z
-  .object({
-    id: z.uuid(),
-    referenceNumber: z.string(),
-    type: z.string(),
-    amount: z.string(),
-    currency: z.string(),
-    balanceAfter: z.string(),
-    description: z.string().nullable(),
-    createdAt: z.string(),
-    counterparty: z
-      .object({
-        accountNumber: z.string().nullable(),
-        accountId: z.string().nullable(),
-      })
-      .nullable(),
-  })
-  .openapi('TransactionHistoryItem');
+// Response schemas
+export const transactionHistoryItemSchema = z.object({
+  id: z.uuid(),
+  referenceNumber: z.string(),
+  type: z.string(),
+  amount: z.string(),
+  currency: z.string(),
+  balanceAfter: z.string(),
+  description: z.string().nullable(),
+  createdAt: z.string(),
+  counterparty: z
+    .object({
+      accountNumber: z.string().nullable(),
+      accountId: z.string().nullable(),
+    })
+    .nullable(),
+});
 
-export const transactionHistorySummarySchema = z
-  .object({
-    currentBalance: z.string(),
-    availableBalance: z.string(),
-    pendingTransactions: z.number().int(),
-    totalHolds: z.string(),
-  })
-  .openapi('TransactionHistorySummary');
+export const transactionHistorySummarySchema = z.object({
+  currentBalance: z.string(),
+  availableBalance: z.string(),
+  pendingTransactions: z.number().int(),
+  totalHolds: z.string(),
+});
 
-export const transactionHistoryPaginationSchema = z
-  .object({
-    nextCursor: z.string().nullable(),
-    hasMore: z.boolean(),
-  })
-  .openapi('TransactionHistoryPagination');
+export const transactionHistoryPaginationSchema = z.object({
+  nextCursor: z.string().nullable(),
+  hasMore: z.boolean(),
+});
 
-export const transactionHistoryResponseSchema = z
-  .object({
-    data: z.array(transactionHistoryItemSchema),
-    pagination: transactionHistoryPaginationSchema,
-    summary: transactionHistorySummarySchema,
-  })
-  .openapi('TransactionHistoryResponse');
+export const transactionHistoryResponseSchema = z.object({
+  data: z.array(transactionHistoryItemSchema),
+  pagination: transactionHistoryPaginationSchema,
+  summary: transactionHistorySummarySchema,
+});
 
 // Export response types for controllers
 export type TransactionHistoryItem = z.infer<typeof transactionHistoryItemSchema>;

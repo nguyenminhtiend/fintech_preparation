@@ -59,119 +59,110 @@
           "completedAt"
         ]
       },
-      "TransactionHistoryItem": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "referenceNumber": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string"
-          },
-          "amount": {
-            "type": "string"
-          },
-          "currency": {
-            "type": "string"
-          },
-          "balanceAfter": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "createdAt": {
-            "type": "string"
-          },
-          "counterparty": {
-            "type": "object",
-            "nullable": true,
-            "properties": {
-              "accountNumber": {
-                "type": "string",
-                "nullable": true
-              },
-              "accountId": {
-                "type": "string",
-                "nullable": true
-              }
-            },
-            "required": [
-              "accountNumber",
-              "accountId"
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "referenceNumber",
-          "type",
-          "amount",
-          "currency",
-          "balanceAfter",
-          "description",
-          "createdAt",
-          "counterparty"
-        ]
-      },
-      "TransactionHistoryPagination": {
-        "type": "object",
-        "properties": {
-          "nextCursor": {
-            "type": "string",
-            "nullable": true
-          },
-          "hasMore": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "nextCursor",
-          "hasMore"
-        ]
-      },
-      "TransactionHistorySummary": {
-        "type": "object",
-        "properties": {
-          "currentBalance": {
-            "type": "string"
-          },
-          "availableBalance": {
-            "type": "string"
-          },
-          "pendingTransactions": {
-            "type": "integer"
-          },
-          "totalHolds": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "currentBalance",
-          "availableBalance",
-          "pendingTransactions",
-          "totalHolds"
-        ]
-      },
-      "TransactionHistoryResponse": {
+      "HistoryResponse": {
         "type": "object",
         "properties": {
           "data": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/TransactionHistoryItem"
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "referenceNumber": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "string"
+                },
+                "currency": {
+                  "type": "string"
+                },
+                "balanceAfter": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "counterparty": {
+                  "type": "object",
+                  "nullable": true,
+                  "properties": {
+                    "accountNumber": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "accountId": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "accountNumber",
+                    "accountId"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "referenceNumber",
+                "type",
+                "amount",
+                "currency",
+                "balanceAfter",
+                "description",
+                "createdAt",
+                "counterparty"
+              ]
             }
           },
           "pagination": {
-            "$ref": "#/components/schemas/TransactionHistoryPagination"
+            "type": "object",
+            "properties": {
+              "nextCursor": {
+                "type": "string",
+                "nullable": true
+              },
+              "hasMore": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "nextCursor",
+              "hasMore"
+            ]
           },
           "summary": {
-            "$ref": "#/components/schemas/TransactionHistorySummary"
+            "type": "object",
+            "properties": {
+              "currentBalance": {
+                "type": "string"
+              },
+              "availableBalance": {
+                "type": "string"
+              },
+              "pendingTransactions": {
+                "type": "integer"
+              },
+              "totalHolds": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "currentBalance",
+              "availableBalance",
+              "pendingTransactions",
+              "totalHolds"
+            ]
           }
         },
         "required": [
@@ -180,7 +171,7 @@
           "summary"
         ]
       },
-      "AccountResponse": {
+      "AccountsResponse": {
         "type": "object",
         "properties": {
           "id": {
@@ -329,7 +320,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TransactionHistoryResponse"
+                  "$ref": "#/components/schemas/HistoryResponse"
                 }
               }
             }
@@ -379,7 +370,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AccountResponse"
+                  "$ref": "#/components/schemas/AccountsResponse"
                 }
               }
             }
