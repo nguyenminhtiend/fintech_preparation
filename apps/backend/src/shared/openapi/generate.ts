@@ -11,6 +11,9 @@ import { type OpenApiRouteMetadata } from '@shared/utils';
 
 import { openapiConfig } from './config';
 
+// Import to ensure Zod is extended with OpenAPI methods before schemas are loaded
+import '@shared/utils/zod';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete';

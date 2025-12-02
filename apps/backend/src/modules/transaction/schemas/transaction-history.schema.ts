@@ -1,7 +1,4 @@
-import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
-
-extendZodWithOpenApi(z);
 
 // Cursor format: {timestamp}|{uuid}
 // Example: 2025-01-26T10:33:29.123Z|550e8400-e29b-41d4-a716-446655440000

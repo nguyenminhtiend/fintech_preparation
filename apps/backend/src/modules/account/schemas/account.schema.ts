@@ -1,7 +1,4 @@
-import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
-
-extendZodWithOpenApi(z);
 
 export const createAccountSchema = z.object({
   customerId: z.uuid('Invalid customer ID format'),
